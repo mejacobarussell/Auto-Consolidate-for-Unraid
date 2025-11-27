@@ -1,7 +1,7 @@
 # Auto-Consolidate-for-Unraid
 
-This script was inspired and a HEAVY modifacation fromthe UNRAID diskmv script by: trinapicot
-https://github.com/trinapicot/unraid-diskmv
+This script was inspired and basedon the original unRAID diskmv script, it is HEAVLY modified from the original diskmv script by trinapicot.
+See: https://github.com/trinapicot/unraid-diskmv
 
 This Bash script is designed to automatically plan and execute consolidation of data within a specific unRAID user share (/mnt/user/TVSHOWS by default) onto the array's physical disks. Its primary goal is to ensure folders are contained on a single, optimal disk while strictly maintaining a disk space safety margin.
 
