@@ -1,5 +1,5 @@
 #!/bin/bash
-# consld8-auto - Fully Automated or Interactive Consolidation for unRAID
+# Autoconsld8 - Fully Automated or Interactive Consolidation for unRAID
 
 # --- Configuration & Constants ---
 BASE_SHARE="/mnt/user/TVSHOWS"
