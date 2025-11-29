@@ -2,10 +2,53 @@
 
 This script was inspired and basedon the original unRAID diskmv script, it is HEAVLY modified from the original diskmv script by trinapicot.
 See: https://github.com/trinapicot/unraid-diskmv
+!
+
+[image](https://github.com/user-attachments/assets/41a58589-8e80-4f71-a893-6ae02331162d)
 
 
 ````markdown
-(https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consold8.sh.jpg)
+
+## 📦 `consld8.sh`: UnRAID Share Consolidation Script
+
+A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single physical disk, ensuring optimal disk utilization and organization.
+
+### 📝 Table of Contents
+
+* [Features](#-features)
+* [Prerequisites](#-prerequisites)
+* [Installation](#-installation)
+* [Usage](#-usage)
+    * [Mode Selection](#mode-selection)
+    * [Options](#options)
+* [Automatic Mode Logic](#automatic-mode-logic)
+* [Configuration](#configuration)
+
+---
+
+## ✨ Features
+
+* **Two Modes:** Fully **Automatic** planning and execution, or step-by-step **Interactive** control.
+* **Safety Margin:** Uses a configurable minimum free space buffer (**200 GB by default**) to prevent overfilling target disks.
+* **Dry Run Support:** The default mode is a **test run** (`-t`), allowing you to review the plan before committing any changes.
+* **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest fragment** (highest file count) of the folder to minimize total data movement.
+* **Safe Execution:** Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful completion.
+
+---
+
+## 🛠️ Prerequisites
+
+This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure (`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
+
+---
+
+## 🚀 Installation
+
+1.  **Save the Script:** Save the script content to a file named `consld8.sh` on your unRAID server (e.g., in `/boot/config/scripts/`).
+2.  **Make Executable:** Set the execution permission:
+
+```bash
+chmod +x /boot/config/scripts/consld8.sh
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
 A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single physical disk, ensuring optimal disk utilization and organization.
