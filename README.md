@@ -117,10 +117,8 @@ the `-a` or `-I` flag. If no mode is supplied,  it will prompt you for selection
 
 | Flag | Mode | Description |
 | :--- | :--- | :--- |
-| `-a` | **Automatic** | Scans all sub-folders within the selected share, calculates the optimal target disk
-for each, and generates a plan. |
-| `-I` | **Interactive** | Allows you to manually select the base share, the specific fragmented sub-folder, 
-and the exact destination disk. |
+| `-a` | **Automatic** | Scans all sub-folders within the selected share, calculates the optimal target disk for each, and generates a plan. |
+| `-I` | **Interactive** | Allows you to manually select the base share, the specific fragmented sub-folder, and the exact destination disk. |
 
 ### Options
 
@@ -128,8 +126,7 @@ and the exact destination disk. |
 | :--- | :--- | :--- | :--- | :--- |
 | `-h` | Help | N/A | Both | Display the usage information and exit. |
 | `-t` | Test Run | `true` | Both | **(Default)** Only generates the plan/reports the move. No files are moved. |
-| `-f` | Force Execute | `false` | Both | **Overrides** the test run. Files **WILL** be moved and deleted from
-original locations. |
+| `-f` | Force Execute | `false` | Both | **Overrides** the test run. Files **WILL** be moved and deleted from original locations. |
 | `-v` | Verbose | `1` | Both | Increases detail, useful for troubleshooting the planning logic in Auto Mode. |
 
 #### Example (Automatic Dry Run)
