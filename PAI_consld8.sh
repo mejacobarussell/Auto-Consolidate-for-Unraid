@@ -4,13 +4,14 @@
 #
 #Interactive mode can be started from comand line with -I (uppercase)
 #
-#
+# -f (force is required to actually move files)
 #
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
 # consld8-auto - Fully Automated or Interactive Consolidation for unRAID
 
 # --- Configuration & Constants ---
+BASE_SHARE="/mnt/user/TVSHOWS"
 # 200 GB minimum free space safety margin (in 1K blocks, as df/du output)
 MIN_FREE_SPACE_KB=209715200
 # ---------------------------------
@@ -18,10 +19,10 @@ MIN_FREE_SPACE_KB=209715200
 usage(){
 cat << EOF
 
-usage: consld8-auto [options:-h|-t|-f|-v|-a]
+usage: consld8-auto [options:-h|-t|-f|-v|-a|-I]
 
 This script has two modes:
-1. Interactive Mode (Default): Prompts for folder and disk selection.
+1. Interactive Mode (Default, or with -I): Prompts for folder and disk selection.
 2. Automatic Mode (-a): Scans all folders and generates an optimized move plan.
 
 options:
@@ -30,6 +31,7 @@ options:
   -f      Override test mode and force valid moves to be performed.
   -v      Print more information (recommended for auto mode).
   -a      *** Run in FULL AUTOMATIC PLANNING MODE ***
+  -I      *** Run in INTERACTIVE MODE (Explicitly selected) ***
 
 EOF
 }
@@ -45,7 +47,7 @@ auto_mode=false   # Default to interactive mode
 mode_set_by_arg=false # New flag to track if mode was set by command-line argument
 
 # --- Argument Parsing ---
-while getopts "htfva" opt; do
+while getopts "htfvaI" opt; do
   case "$opt" in
     h)
       usage
@@ -64,6 +66,10 @@ while getopts "htfva" opt; do
       ;;
     a) # Activate Automatic Mode
       auto_mode=true
+      mode_set_by_arg=true
+      ;;
+    I) # Activate Interactive Mode (Explicitly selected)
+      auto_mode=false
       mode_set_by_arg=true
       ;;
     *)
@@ -118,17 +124,12 @@ execute_move() {
     echo "Move execution complete for $src_dir_name."
 }
 
-# --- Configuration Prompt Logic ---
-configure_base_share() {
-    echo "------------------------------------------------"
-    echo "       Configure Base Share Location            "
-    echo "------------------------------------------------"
-    
+# Function for manual path entry (used as a fallback/alternative)
+configure_manual_base_share() {
     while true; do
-        # Note: We display the current BASE_SHARE value, which can be accepted by hitting Enter.
+        # Use the current BASE_SHARE as the default prompt value
         read -r -p "Enter the base share path (e.g., /mnt/user/TVSHOWS). Current: $BASE_SHARE: " NEW_BASE_SHARE_INPUT
         
-        # Use existing BASE_SHARE if input is empty
         if [ -z "$NEW_BASE_SHARE_INPUT" ]; then
             echo "Using current base share: $BASE_SHARE"
             break
@@ -142,6 +143,54 @@ configure_base_share() {
             break
         else
             echo "Error: '$NEW_BASE_SHARE_INPUT' is not a valid directory. Please try again." >&2
+        fi
+    done
+}
+
+
+# --- Share Selection Logic (New) ---
+select_base_share() {
+    echo "------------------------------------------------"
+    echo "      Select Base Share for Consolidation       "
+    echo "------------------------------------------------"
+    
+    # Scan for top-level user shares in /mnt/user/
+    local shares=()
+    # Find all top-level directories under /mnt/user/ that are not system files or the root itself
+    mapfile -t shares < <(find /mnt/user -maxdepth 1 -mindepth 1 -type d -not -name '@*' -printf '%P\n' 2>/dev/null | sort)
+
+    if [ ${#shares[@]} -eq 0 ]; then
+        echo "WARNING: No user shares found in /mnt/user/. Proceeding with manual input."
+        # Fallback to manual input if no shares are found
+        configure_manual_base_share
+        return 0
+    fi
+    
+    echo "Available Shares in /mnt/user/:"
+    local i=1
+    for share_name in "${shares[@]}"; do
+        echo "  $i) $share_name"
+        i=$((i + 1))
+    done
+    echo "  L) Enter a custom path manually."
+    
+    while true; do
+        read -r -p "Enter number of share or 'L' for custom path: " SELECTION
+        
+        # Check for Manual Input
+        if [[ "$SELECTION" == "L" || "$SELECTION" == "l" ]]; then
+            configure_manual_base_share
+            break
+        fi
+
+        # Check for numbered selection
+        if [[ "$SELECTION" =~ ^[0-9]+$ ]] && [ "$SELECTION" -ge 1 ] && [ "$SELECTION" -le ${#shares[@]} ]; then
+            SELECTED_SHARE_NAME="${shares[$((SELECTION - 1))]}"
+            BASE_SHARE="/mnt/user/$SELECTED_SHARE_NAME"
+            echo "Base Share set to: $BASE_SHARE"
+            break
+        else
+            echo "Invalid selection. Please enter a number between 1 and ${#shares[@]}, or 'L'." >&2
         fi
     done
     echo ""
@@ -189,7 +238,6 @@ interactive_consolidation() {
         if [[ "$FOLDER_NUM" =~ ^[0-9]+$ ]] && [ "$FOLDER_NUM" -ge 1 ] && [ "$FOLDER_NUM" -le ${#FOLDERS[@]} ]; then
             SELECTED_FOLDER="${FOLDERS[$((FOLDER_NUM - 1))]}"
             # The full share component path (e.g., TVSHOWS/ShowName)
-            # This requires $BASE_SHARE to be /mnt/user/SHARENAME for the substring removal to work correctly.
             SHARE_COMPONENT="${BASE_SHARE#/mnt/user/}/$SELECTED_FOLDER"
             break
         else
@@ -484,8 +532,8 @@ auto_plan_and_execute() {
 
 # --- Main Execution Flow ---
 
-# 0. Always prompt for the base share first, as requested.
-configure_base_share
+# 0. Prompt for the base share by scanning /mnt/user/
+select_base_share
 
 if [ "$mode_set_by_arg" = false ]; then
     echo "------------------------------------------------"
