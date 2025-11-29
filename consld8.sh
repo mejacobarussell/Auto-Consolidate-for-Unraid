@@ -1,5 +1,6 @@
 #
 # First run (./consld8.sh -h)
+#
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
 # consld8-auto - Fully Automated or Interactive Consolidation for unRAID
@@ -40,7 +41,7 @@ EOF
 }
 
 # Set shell options
-shopt -s nullglob   # FIX: Corrected syntax to enable nullglob option
+shopt s nullglob
 [ ${DEBUG:=0} -gt 0 ] && set -x
 
 # --- Variables ---
@@ -104,6 +105,43 @@ is_consolidated() {
     else
         return 1 # Not consolidated (False)
     fi
+}
+
+# Function to display fragmentation information for a selected folder
+display_folder_fragmentation_info() {
+    local share_component="$1"
+    local total_size=0
+    local fragment_count=0
+
+    printf "%b\n" "${CYAN}--- Current Fragmentation Status ---${RESET}"
+    
+    # Loop through all possible source disks (including cache)
+    for d_path in /mnt/{disk[1-9]{,[0-9]},cache}; do
+        local disk_name="${d_path#/mnt/}"
+        local full_path="$d_path/$share_component"
+        
+        if [ -d "$full_path" ]; then
+            # Calculate size (in 1K blocks)
+            local folder_size_kb=$(du -s "$full_path" 2>/dev/null | cut -f 1)
+            
+            # Only count and display if the folder actually contains data (size > 0)
+            if [ -n "$folder_size_kb" ] && [ "$folder_size_kb" -gt 0 ]; then
+                local formatted_size=$(numfmt --to=iec --from-unit=1K $folder_size_kb)
+                printf "%b\n" "  -> ${GREEN}$disk_name${RESET} (${BLUE}$full_path${RESET}): ${YELLOW}$formatted_size${RESET}"
+                total_size=$((total_size + folder_size_kb))
+                fragment_count=$((fragment_count + 1))
+            fi
+        fi
+    done
+    
+    if [ "$fragment_count" -eq 0 ]; then
+        printf "%b\n" "${YELLOW}Folder appears empty or consolidated to a location not checked.${RESET}"
+    else
+        local formatted_total_size=$(numfmt --to=iec --from-unit=1K $total_size)
+        printf "%b\n" "${CYAN}Total Size across $fragment_count fragments: ${YELLOW}$formatted_total_size${RESET}"
+    fi
+    printf "%b\n" "${CYAN}------------------------------------${RESET}"
+    echo ""
 }
 
 
@@ -340,6 +378,9 @@ interactive_consolidation() {
 
     printf "%b\n" "Selected Folder: ${BLUE}$SELECTED_FOLDER${RESET}"
     echo ""
+    
+    # 2a. NEW STEP: Show Fragmentation Info
+    display_folder_fragmentation_info "$SHARE_COMPONENT"
 
     # 3. Select Destination Disk
     
@@ -382,7 +423,7 @@ interactive_consolidation() {
             break
         else
             printf "%b\n" "${RED}Invalid selection. Please enter a number between 1 and ${#DISKS[@]}.${RESET}"
-        fi
+        }
     done
 
     printf "%b\n" "Selected Destination Disk: ${BLUE}$SELECTED_DISK${RESET}"
@@ -403,12 +444,13 @@ interactive_consolidation() {
     printf "%b\n" "${CYAN}--------------------${RESET}"
 
     while true; do
-        # FIX: Construct colored prompt using printf -v
+        # FIX: Construct colored prompt using printf -v and guide the user for Enter key
         local prompt_str
-        printf -v prompt_str "Proceed with consolidation? (yes/no): "
+        printf -v prompt_str "Proceed with consolidation? (%b/yes to confirm, no to cancel): " "${GREEN}Enter${RESET}"
         read -r -p "$prompt_str" CONFIRM
+        # Check for empty string (Enter), or explicit 'y'/'yes'
         case "$CONFIRM" in
-            [Yy][Ee][Ss])
+            ""|[Yy]|[Yy][Ee][Ss]) # Matches empty string (Enter), Y, y, Yes, yes
                 execute_move "$SHARE_COMPONENT" "$SELECTED_DISK"
                 if [ "$dry_run" = true ]; then
                     # The prompt after dry run is removed
@@ -416,12 +458,12 @@ interactive_consolidation() {
                 fi
                 return 0
                 ;;
-            [Nn][Oo])
+            [Nn]|[Nn][Oo]) # Matches N, n, No, no
                 printf "%b\n" "${YELLOW}Consolidation cancelled by user.${RESET}"
                 return 1
                 ;;
             *)
-                printf "%b\n" "${RED}Please answer 'yes' or 'no'.${RESET}"
+                printf "%b\n" "${RED}Invalid input. Please answer 'yes', 'no', or press Enter to confirm.${RESET}"
                 ;;
         esac
     done
@@ -495,7 +537,7 @@ auto_plan_and_execute() {
         folder_name="${full_src_path##*/}" # Just the folder name (e.g., ShowName)
         folder_size=$(du -s "$full_src_path" | cut -f 1)
         
-        if [ "$folder_size" -lt 10 ]; then continue; fi
+        if [ "$folder_size" -lt 10 ]; then continue; }
 
         # --- Check if folder is already consolidated ---
         if is_consolidated "$share_component"; then
