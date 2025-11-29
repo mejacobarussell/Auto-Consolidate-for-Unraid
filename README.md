@@ -15,7 +15,6 @@ If this script helps you keep your unRAID array tidy, please consider supporting
 ![image](https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/example.png)
 
 
-````markdown
 
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
