@@ -47,8 +47,8 @@ of the folder to minimize total data movement.
 
 ## 🛠️ Prerequisites
 
-This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure (`/mnt/diskX`, `/mnt/cache`)
-and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
+This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure
+(`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
 
 ---
 
@@ -61,7 +61,8 @@ and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfm
 chmod +x /consld8.sh
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
-A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single
+A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders)
+onto a single
 physical disk, ensuring optimal disk utilization and organization.
 
 ### 📝 Table of Contents
@@ -84,14 +85,15 @@ physical disk, ensuring optimal disk utilization and organization.
 * **Dry Run Support:** The default mode is a **test run** (`-t`), allowing you to review the plan before committing any changes.
 * **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest fragment** (highest file count) of
 the folder to minimize total data movement.
-* **Safe Execution:** Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful completion.
+* **Safe Execution:** Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful
+completion.
 
 ---
 
 ## 🛠️ Prerequisites
 
-This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure (`/mnt/diskX`, `/mnt/cache`)
-and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
+This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure
+(`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
 
 ---
 
