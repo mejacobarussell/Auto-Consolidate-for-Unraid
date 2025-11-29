@@ -58,13 +58,15 @@ This script is written in **Bash** and requires standard Linux tools available o
 1.  **SSH into your unRAID server.**
 2.  **Download the script:**
     ```bash
-    wget [https://raw.githubusercontent.com/](https://raw.githubusercontent.com/)[Your-Username]/[Your-Repo]/main/consld8-1.0.3.sh -O /consld8.sh.sh
-    ```
+    wget [https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/consld8-1.0.3.sh]9https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/consld8-1.0.3.sh)\
+
+        ```
 3.  **Make the script executable:**
+
     ```bash
     chmod +x consld8.sh
     ```
-4.  *(Optional but Recommended):* Run it using the **User Scripts** plugin on unRAID for easier management.
+5.  *(Optional but Recommended):* Run it using the **User Scripts** plugin on unRAID for easier management.
 
 ---
 
