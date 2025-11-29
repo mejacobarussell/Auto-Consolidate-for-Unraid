@@ -88,12 +88,17 @@ The script defaults to **Test Mode (Dry Run)** for safety. Use the `-f` flag to 
 Use this mode for granular control over one specific folder.
 
 # Run in Interactive Mode and Dry Run (Default)
-./consld8-auto.sh -I
+./consld8.sh -I
 
 # Run in Interactive Mode and EXECUTE the move
-./consld8-auto.sh -I -f
+./consld8.sh -I -f
 
 ### 2. Automatic Mode Example
 
 Use this mode to let the script manage the entire array cleanup.
 
+# Run in Auto Mode and Test the full plan (Recommended first run)
+./consld8.sh -a -v
+
+# Run in Auto Mode and EXECUTE the full plan
+./consld8.sh -a -f -v
