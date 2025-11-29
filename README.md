@@ -132,6 +132,6 @@ Push to the branch (git push origin feature/AmazingFeature).
 Distributed under the Unliscense See LICENSE for more information.
 
 📧 Contact
-[Jacob Russell] - [Mrjacobarussell@gmail.com
+[Jacob Russell] - [Mrjacobarussell@gmail.com]
 
 Project Link: https://github.com/mejacobrussell/Auto-Consolidate-for-Unraid
