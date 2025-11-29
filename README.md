@@ -3,9 +3,9 @@
 This script was inspired and basedon the original unRAID diskmv script, it is HEAVLY modified from the original diskmv script by trinapicot.
 See: https://github.com/trinapicot/unraid-diskmv
 
-https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consold8.sh.jpg
 
 ````markdown
+(https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consold8.sh.jpg)
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
 A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single physical disk, ensuring optimal disk utilization and organization.
