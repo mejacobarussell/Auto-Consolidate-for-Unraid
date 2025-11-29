@@ -102,3 +102,36 @@ Use this mode to let the script manage the entire array cleanup.
 
 # Run in Auto Mode and EXECUTE the full plan
 ./consld8.sh -a -f -v
+
+⚙️ Configuration & Safety
+The script is configured using internal variables and runtime prompts.
+
+Safety Margin
+
+By default, the script enforces a 200 GB minimum free space safety margin on the target disk after the consolidation move is planned.
+
+In Automatic Mode, you are prompted to adjust this value before the planning phase begins.
+
+Consolidation Logic
+
+The script uses the following command for moving files. This method copies the contents to the destination and removes the source files only if the copy was successful, ensuring data integrity.
+
+
+🤝 Contributing
+I welcome suggestions and contributions to improve the efficiency and safety of this script for the unRAID community.
+
+Fork the repository.
+
+Create your feature branch (git checkout -b feature/AmazingFeature).
+
+Commit your changes (git commit -m 'Add some AmazingFeature').
+
+Push to the branch (git push origin feature/AmazingFeature).
+
+📝 License
+Distributed under the Unliscense See LICENSE for more information.
+
+📧 Contact
+[Jacob Russell] - [Mrjacobarussell@gmail.com
+
+Project Link: https://github.com/mejacobrussell/Auto-Consolidate-for-Unraid
