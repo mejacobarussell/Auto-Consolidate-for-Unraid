@@ -3,8 +3,7 @@
 This script was inspired and basedon the original unRAID diskmv script, it is HEAVLY modified from the original diskmv script by trinapicot.
 See: https://github.com/trinapicot/unraid-diskmv
 
-
-Here is the complete README file for `consld8.sh` as a single, copyable block of text:
+https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consold8.sh.jpg
 
 ````markdown
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
