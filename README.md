@@ -36,12 +36,13 @@ onto a single physical disk, ensuring optimal disk utilization and organization.
 
 ## ✨ Features
 
-* **Two Modes:** Fully **Automatic** planning and execution, or step-by-step **Interactive** control.
-* **Safety Margin:** Uses a configurable minimum free space buffer (**200 GB by default**) to prevent overfilling target disks.
-* **Dry Run Support:** The default mode is a **test run** (`-t`), allowing you to review the plan before committing any changes.
-* **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest fragment** (highest file count)
-of the folder to minimize total data movement.
-* **Safe Execution:** Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful completion.
+* **Two Modes:** Fully **Automatic** planning and execution, or step-by-step 
+**Interactive** control. * **Safety Margin:** Uses a configurable minimum free space buffer
+(**200 GB by default**) to prevent overfilling target disks.* **Dry Run Support:** The default
+mode is a **test run** (`-t`), allowing you to review the plan before committing any changes. *
+**Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest
+fragment** (highest file count) of the folder to minimize total data movement. * **Safe Execution:**
+Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful completion.
 
 ---
 
