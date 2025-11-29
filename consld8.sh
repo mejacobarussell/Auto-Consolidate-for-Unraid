@@ -22,8 +22,8 @@ cat << EOF
 usage: consld8-auto [options:-h|-t|-f|-v|-a|-I]
 
 This script has two modes:
-1. Interactive Mode (Default, or with -I): Prompts for folder and disk selection.
-2. Automatic Mode (-a): Scans all folders and generates an optimized move plan.
+1. Interactive Mode (Requires -I flag): Prompts for folder and disk selection.
+2. Automatic Mode (Requires -a flag): Scans all folders and generates an optimized move plan.
 
 options:
   -h      Display this usage information.
@@ -43,8 +43,8 @@ shopt -s nullglob   # enable nullglob to remove words with no matching filenames
 # --- Variables ---
 verbose=1
 dry_run=true      # Default to safety (Test mode)
-auto_mode=false   # Default to interactive mode
-mode_set_by_arg=false # New flag to track if mode was set by command-line argument
+auto_mode=false   # Default is set to false, but mode must be selected if no flag is provided
+mode_set_by_arg=false # Tracks if -a or -I was provided
 
 # --- Argument Parsing ---
 while getopts "htfvaI" opt; do
@@ -55,22 +55,20 @@ while getopts "htfvaI" opt; do
       ;;
     t) # Specify test mode
       dry_run=true
-      mode_set_by_arg=true
       ;;
     f) # Override test mode and force action
       dry_run=false
-      mode_set_by_arg=true
       ;;
     v)
       verbose=$((verbose + 1))
       ;;
     a) # Activate Automatic Mode
       auto_mode=true
-      mode_set_by_arg=true
+      mode_set_by_arg=true # Only set to true if a mode (-a or -I) is explicitly provided
       ;;
     I) # Activate Interactive Mode (Explicitly selected)
       auto_mode=false
-      mode_set_by_arg=true
+      mode_set_by_arg=true # Only set to true if a mode (-a or -I) is explicitly provided
       ;;
     *)
       echo "Unknown option (ignored): -$OPTARG" >&2
@@ -311,6 +309,10 @@ interactive_consolidation() {
         case "$CONFIRM" in
             [Yy][Ee][Ss])
                 execute_move "$SHARE_COMPONENT" "$SELECTED_DISK"
+                if [ "$dry_run" = true ]; then
+                    # The prompt after dry run is removed
+                    :
+                fi
                 return 0
                 ;;
             [Nn][Oo])
@@ -532,13 +534,13 @@ auto_plan_and_execute() {
 
 # --- Main Execution Flow ---
 
-# 0. Prompt for the base share by scanning /mnt/user/
-select_base_share
-
+# 1. Determine operation mode (Auto or Interactive)
+# This block now runs first if no mode flag was supplied.
 if [ "$mode_set_by_arg" = false ]; then
     echo "------------------------------------------------"
     echo "       UnRAID Consolidation Mode Selection      "
     echo "------------------------------------------------"
+    echo "No operation mode (-a or -I) was specified. Please select a mode to proceed."
     echo "1) Interactive Mode: Select folder and destination disk manually."
     echo "2) Automatic Mode: Scan all shares, plan, and execute optimized moves."
     echo ""
@@ -562,7 +564,10 @@ if [ "$mode_set_by_arg" = false ]; then
     echo ""
 fi
 
+# 2. Prompt for the base share by scanning /mnt/user/
+select_base_share
 
+# 3. Execute the selected mode
 if [ "$auto_mode" = true ]; then
     auto_plan_and_execute
 else
