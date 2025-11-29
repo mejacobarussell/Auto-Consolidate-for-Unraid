@@ -116,6 +116,8 @@ Consolidation Logic
 
 The script uses the following command for moving files. This method copies the contents to the destination and removes the source files only if the copy was successful, ensuring data integrity.
 
+rsync -avh --remove-source-files [source_path]/ [dest_path]/
+
 
 🤝 Contributing
 I welcome suggestions and contributions to improve the efficiency and safety of this script for the unRAID community.
