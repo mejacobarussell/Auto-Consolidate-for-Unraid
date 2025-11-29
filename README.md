@@ -94,7 +94,7 @@ and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfm
 2.  **Make Executable:** Set the execution permission:
 
 ```bash
-chmod +x /boot/config/scripts/consld8.sh
+chmod +x consld8.sh
 ````
 
 3.  **Run:** Execute the script from the command line:
@@ -102,7 +102,7 @@ chmod +x /boot/config/scripts/consld8.sh
 <!-- end list -->
 
 ```bash
-/boot/config/scripts/consld8.sh
+/consld8.sh
 ```
 
 -----
