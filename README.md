@@ -4,6 +4,13 @@ This script was inspired and basedon the original unRAID diskmv script, it is HE
 See: https://github.com/trinapicot/unraid-diskmv
 
 
+### Support the Project
+
+If this script helps you keep your unRAID array tidy, please consider supporting its development!
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=000000)](https://buymeacoffee.com/yourditchdoc)
+
+
 ![image](https://github.com/user-attachments/assets/41a58589-8e80-4f71-a893-6ae02331162d)
 
 
@@ -170,3 +177,8 @@ also be set interactively during the automatic run. |
 
 ```
 ```
+### Support the Project
+
+If this script helps you keep your unRAID array tidy, please consider supporting its development!
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=000000)](https://buymeacoffee.com/yourditchdoc)
