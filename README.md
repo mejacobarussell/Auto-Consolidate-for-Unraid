@@ -11,7 +11,8 @@ See: https://github.com/trinapicot/unraid-diskmv
 
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
-A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single physical disk, ensuring optimal disk utilization and organization.
+A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders)
+onto a single physical disk, ensuring optimal disk utilization and organization.
 
 ### 📝 Table of Contents
 
@@ -31,14 +32,16 @@ A powerful Bash script for unRAID systems designed to automatically or interacti
 * **Two Modes:** Fully **Automatic** planning and execution, or step-by-step **Interactive** control.
 * **Safety Margin:** Uses a configurable minimum free space buffer (**200 GB by default**) to prevent overfilling target disks.
 * **Dry Run Support:** The default mode is a **test run** (`-t`), allowing you to review the plan before committing any changes.
-* **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest fragment** (highest file count) of the folder to minimize total data movement.
+* **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest fragment** (highest file count)
+of the folder to minimize total data movement.
 * **Safe Execution:** Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful completion.
 
 ---
 
 ## 🛠️ Prerequisites
 
-This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure (`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
+This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure (`/mnt/diskX`, `/mnt/cache`)
+and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
 
 ---
 
@@ -51,7 +54,8 @@ This script is designed to run directly on an **unRAID** server, as it relies on
 chmod +x /boot/config/scripts/consld8.sh
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
-A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single physical disk, ensuring optimal disk utilization and organization.
+A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single
+physical disk, ensuring optimal disk utilization and organization.
 
 ### 📝 Table of Contents
 
@@ -71,14 +75,16 @@ A powerful Bash script for unRAID systems designed to automatically or interacti
 * **Two Modes:** Fully **Automatic** planning and execution, or step-by-step **Interactive** control.
 * **Safety Margin:** Uses a configurable minimum free space buffer (**200 GB by default**) to prevent overfilling target disks.
 * **Dry Run Support:** The default mode is a **test run** (`-t`), allowing you to review the plan before committing any changes.
-* **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest fragment** (highest file count) of the folder to minimize total data movement.
+* **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest fragment** (highest file count) of
+the folder to minimize total data movement.
 * **Safe Execution:** Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful completion.
 
 ---
 
 ## 🛠️ Prerequisites
 
-This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure (`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
+This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure (`/mnt/diskX`, `/mnt/cache`)
+and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
 
 ---
 
@@ -103,7 +109,8 @@ chmod +x /boot/config/scripts/consld8.sh
 
 ## 💡 Usage
 
-The script requires you to explicitly select either **Automatic** or **Interactive** mode using the `-a` or `-I` flag. If no mode is supplied, it will prompt you for selection.
+The script requires you to explicitly select either **Automatic** or **Interactive** mode using the `-a` or `-I` flag. If no mode is supplied, 
+it will prompt you for selection.
 
 ### Mode Selection
 
@@ -143,9 +150,11 @@ Select a specific share and folder, then execute the move immediately:
 
 The automatic planner uses a prioritized system to choose the best destination disk for consolidating a fragmented folder:
 
-1.  **Safety Check (Must Pass):** The proposed move must ensure the target disk's final free space is greater than the configured **Safety Margin** (`MIN_FREE_SPACE_KB`). Disks failing this are ignored.
-2.  **Primary Metric (Maximize existing data):** Among all safe disks, the script selects the disk that **already contains the highest number of files** belonging to the folder being consolidated. This minimizes the I/O operations required.
-3.  **Secondary Metric (Tie-breaker):** If multiple disks tie for the highest file count, the script chooses the one with the **most free space**.
+1.  **Safety Check (Must Pass):** The proposed move must ensure the target disk's final free space is greater than the configured **Safety Margin**
+2.  (`MIN_FREE_SPACE_KB`). Disks failing this are ignored.
+    **Primary Metric (Maximize existing data):** Among all safe disks, the script selects the disk that **already contains the highest number of
+   files** belonging to the folder being consolidated. This minimizes the I/O operations required.
+5.  **Secondary Metric (Tie-breaker):** If multiple disks tie for the highest file count, the script chooses the one with the **most free space**.
 
 -----
 
@@ -156,7 +165,8 @@ You can easily adjust the script's default behavior by editing the constants at 
 | Constant | Default Value | Description |
 | :--- | :--- | :--- |
 | `BASE_SHARE` | `"/mnt/user/TVSHOWS"` | The default starting user share path if one is not manually selected. |
-| `MIN_FREE_SPACE_KB` | `209715200` | The required minimum free space after consolidation, specified in **1K blocks** (200 GB). This value can also be set interactively during the automatic run. |
+| `MIN_FREE_SPACE_KB` | `209715200` | The required minimum free space after consolidation, specified in **1K blocks** (200 GB). This value can 
+also be set interactively during the automatic run. |
 
 ```
 ```
