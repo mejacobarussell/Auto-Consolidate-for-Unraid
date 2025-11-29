@@ -65,7 +65,7 @@ This script is written in **Bash** and requires standard Linux tools available o
 3.  **Make the script executable:**
 
     ```bash
-    chmod +x consld8.sh
+    chmod +x consld8-1.0.3.sh
     ```
 5.  *(Optional but Recommended):* Run it using the **User Scripts** plugin on unRAID for easier management.
 
