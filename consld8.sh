@@ -41,7 +41,7 @@ EOF
 }
 
 # Set shell options
-shopt s nullglob
+shopt -s nullglob  # Corrected syntax to enable nullglob option
 [ ${DEBUG:=0} -gt 0 ] && set -x
 
 # --- Variables ---
@@ -49,6 +49,8 @@ verbose=1
 dry_run=true      # Default to safety (Test mode)
 auto_mode=false   # Default is set to false, but mode must be selected if no flag is provided
 mode_set_by_arg=false # Tracks if -a or -I was provided
+ACTIVE_MIN_FREE_KB="$MIN_FREE_SPACE_KB" # Variable to store the user-configured minimum free space
+# -------------------
 
 # --- Argument Parsing ---
 while getopts "htfvaI" opt; do
@@ -199,7 +201,7 @@ configure_manual_base_share() {
         if [ -z "$NEW_BASE_SHARE_INPUT" ]; then
             printf "%b\n" "Using current base share: ${BLUE}$BASE_SHARE${RESET}"
             break
-        fi
+        fi # FIX: Closing 'if' block
         
         # Check if the input path exists and is a directory
         if [ -d "$NEW_BASE_SHARE_INPUT" ]; then
@@ -260,6 +262,7 @@ select_base_share() {
             break
         else
             printf "%b\n" "${RED}Invalid selection. Please enter a number between 1 and ${#shares[@]}, or 'L'.${RESET}" >&2
+        */
         fi
     done
     echo ""
@@ -423,7 +426,7 @@ interactive_consolidation() {
             break
         else
             printf "%b\n" "${RED}Invalid selection. Please enter a number between 1 and ${#DISKS[@]}.${RESET}"
-        }
+        fi
     done
 
     printf "%b\n" "Selected Destination Disk: ${BLUE}$SELECTED_DISK${RESET}"
@@ -470,14 +473,54 @@ interactive_consolidation() {
 }
 
 
-# --- Core Logic for Automated Planning (Fixed the 'end' syntax) ---
+# Function to prompt the user for the minimum free space safety margin in GB
+prompt_for_min_free_space() {
+    local default_gb=$((MIN_FREE_SPACE_KB / 1024 / 1024)) # Default in GB (200)
+    
+    printf "%b\n" "${CYAN}--- Safety Margin Configuration ---${RESET}"
+    # FIX: Replaced echo with printf "%b\n" to correctly interpret ANSI color codes
+    printf "%b\n" "The current default minimum free space safety margin is ${BLUE}${default_gb} GB${RESET}."
+    printf "%b\n" "This script will ensure the destination disk has at least this much free space AFTER the move."
+    
+    while true; do
+        local prompt_str
+        printf -v prompt_str "Enter a new minimum free space amount (in GB) or press Enter to use the default of %b GB: " "${GREEN}${default_gb}${RESET}"
+        read -r -p "$prompt_str" USER_INPUT_GB
+        
+        if [ -z "$USER_INPUT_GB" ]; then
+            ACTIVE_MIN_FREE_KB="$MIN_FREE_SPACE_KB"
+            printf "%b\n" "Using default safety margin: ${BLUE}$(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB)${RESET}"
+            return 0
+        fi
+
+        # Input validation: must be a positive integer
+        # Note: Uses POSIX ERE syntax for regex matching in bash [[ ... =~ ... ]]
+        if [[ "$USER_INPUT_GB" =~ ^[1-9][0-9]*$ ]]; then
+            # Convert GB to 1K blocks (KB)
+            # KB = GB * 1024 * 1024
+            ACTIVE_MIN_FREE_KB=$((USER_INPUT_GB * 1024 * 1024))
+            printf "%b\n" "Safety margin set to: ${BLUE}$(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB)${RESET}"
+            return 0
+        else
+            printf "%b\n" "${RED}Invalid input. Please enter a positive whole number for GB or press Enter.${RESET}" >&2
+        fi
+    done
+}
+
+
+# --- Core Logic for Automated Planning (Refactored for Tiered Fallback) ---
 
 auto_plan_and_execute() {
     printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
     printf "%b\n" "${CYAN}  Starting FULL AUTOMATED CONSOLIDATION PLANNER         ${RESET}"
     printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
+    
+
+    # NEW: Prompt for minimum free space before proceeding with the scan
+    prompt_for_min_free_space
+
     printf "%b\n" "Base Share: ${BLUE}$BASE_SHARE${RESET}"
-    printf "%b\n" "Safety Margin: ${BLUE}$(numfmt --to=iec --from-unit=1K $MIN_FREE_SPACE_KB)${RESET} minimum free space"
+    printf "%b\n" "Safety Margin: ${BLUE}$(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB)${RESET} minimum free space"
     
     if [ "$dry_run" = true ]; then
         printf "%b\n" ">> MODE: ${YELLOW}DRY RUN (Planning Only, no files will move)${RESET}"
@@ -497,7 +540,7 @@ auto_plan_and_execute() {
         disk_name="${d_path#/mnt/}"
         
         # CRITICAL FIX: Robustly get the Available blocks using df -P
-        current_free=$(df -P "$d_path" | tail -1 | awk '{ print $4 }')
+        current_free=$(df -P "$d_path" 2>/dev/null | tail -1 | awk '{ print $4 }')
         
         # Check if current_free is empty or non-numeric (setting to 0 if invalid)
         if ! [[ "$current_free" =~ ^[0-9]+$ ]]; then
@@ -512,7 +555,7 @@ auto_plan_and_execute() {
         share_path_relative="${BASE_SHARE#/mnt/user/}"
         
         if [ -d "$d_path/$share_path_relative" ]; then
-            current_share_usage=$(du -s "$d_path/$share_path_relative" | cut -f 1)
+            current_share_usage=$(du -s "$d_path/$share_path_relative" 2>/dev/null | cut -f 1)
         else
             current_share_usage=0
         fi
@@ -526,18 +569,22 @@ auto_plan_and_execute() {
     
     # 2. Iterate through all subdirectories and create the plan
     echo ""
-    echo "Generating Consolidation Plan..."
+    echo "Generating Consolidation Plan (Prioritizing File Count > Free Space Fallback)..."
+    
+    # Temporary file to store candidates for sorting
+    local TEMP_CANDIDATES
+    TEMP_CANDIDATES=$(mktemp)
     
     # Loop through subdirectories of the base share (e.g., TVSHOWS/Show1, TVSHOWS/Show2)
     while IFS= read -r full_src_path; do
         
-        share_component="${full_src_path#/mnt/user/}" # TVSHOWS/ShowName
+        share_component="${full_src_path#/mnt/user/}" # e.g., TVSHOWS/ShowName
         if [ -z "$share_component" ]; then continue; fi
         
         folder_name="${full_src_path##*/}" # Just the folder name (e.g., ShowName)
-        folder_size=$(du -s "$full_src_path" | cut -f 1)
+        folder_size=$(du -s "$full_src_path" 2>/dev/null | cut -f 1)
         
-        if [ "$folder_size" -lt 10 ]; then continue; }
+        if [ "$folder_size" -lt 10 ]; then continue; fi
 
         # --- Check if folder is already consolidated ---
         if is_consolidated "$share_component"; then
@@ -546,40 +593,48 @@ auto_plan_and_execute() {
         fi
         # --- END Check ---
 
-        # Tracking variables for the new priority logic
-        MAX_FILE_COUNT=-1
-        MAX_FREE_SPACE=-1
-        BEST_DEST_DISK=""
-        
-        # Get total usage of the entire share across all disks
-        TOTAL_SHARE_SIZE=0
-        for disk_name in "${!DISK_SHARE_USAGE[@]}"; do
-              TOTAL_SHARE_SIZE=$((TOTAL_SHARE_SIZE + DISK_SHARE_USAGE[$disk_name]))
+        # Get total size of all fragments for this specific folder (NOT the entire share)
+        # This is used for logging/planning output
+        TOTAL_FOLDER_SIZE=0
+        for d_path in /mnt/{disk[1-9]{,[0-9]},cache}; do
+            if [ -d "$d_path/$share_component" ]; then
+                current_folder_on_disk_size=$(du -s "$d_path/$share_component" 2>/dev/null | cut -f 1)
+                TOTAL_FOLDER_SIZE=$((TOTAL_FOLDER_SIZE + current_folder_on_disk_size))
+            fi
         done
-
-        # 2a. Find the best destination disk using new File Count > Free Space priority
+        # Sanity check for size: if no fragments found with size, skip.
+        if [ "$TOTAL_FOLDER_SIZE" -eq 0 ]; then
+             printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' - No file fragments found. Skipping.${RESET}"
+             continue
+        fi
+        
+        # Reset candidate file
+        > "$TEMP_CANDIDATES"
+        
+        # 2a. Iterate through all disks to find valid candidates
         for d_path in /mnt/{disk[1-9]{,[0-9]},cache}; do
             disk_name="${d_path#/mnt/}"
             
             # --- 1. Calculate Required Space (Cost) ---
-            # Current usage of this folder on this specific disk
+            
+            # Size of the current folder fragment on this specific disk
             if [ -d "$d_path/$share_component" ]; then
-                current_folder_on_disk_size=$(du -s "$d_path/$share_component" | cut -f 1)
+                current_folder_on_disk_size=$(du -s "$d_path/$share_component" 2>/dev/null | cut -f 1)
             else
                 current_folder_on_disk_size=0
             fi
 
-            # ODUSAGE: Total size to move *to* this disk (Total Share Size - current usage on this disk)
-            ODUSAGE=$((TOTAL_SHARE_SIZE - DISK_SHARE_USAGE[$disk_name])) 
-
-            # REQUIRED_SPACE: Net space required on this disk
-            REQUIRED_SPACE=$((ODUSAGE - current_folder_on_disk_size))
+            # REQUIRED_SPACE: Total size of all fragments (TOTAL_FOLDER_SIZE) minus the size already on this disk.
+            # This is the net space needed to move all other fragments here.
+            REQUIRED_SPACE=$((TOTAL_FOLDER_SIZE - current_folder_on_disk_size))
             if [ "$REQUIRED_SPACE" -lt 0 ]; then REQUIRED_SPACE=0; fi
             
             # --- 2. Safety Check (Must pass this to be considered) ---
             DFREE="${DISK_FREE[$disk_name]}"
-            if [ "$((DFREE - REQUIRED_SPACE))" -lt "$MIN_FREE_SPACE_KB" ]; then
-                [ $verbose -gt 2 ] && printf "%b\n" "    ${YELLOW}$disk_name FAILED safety check. Free: $(numfmt --to=iec --from-unit=1K $DFREE) vs Needed: $(numfmt --to=iec --from-unit=1K $REQUIRED_SPACE). Skipping.${RESET}"
+            
+            # Check if Free Space after move meets the minimum safety margin
+            if [ "$((DFREE - REQUIRED_SPACE))" -lt "$ACTIVE_MIN_FREE_KB" ]; then
+                [ $verbose -gt 2 ] && printf "%b\n" "    ${YELLOW}$disk_name FAILED safety check. Free: $(numfmt --to=iec --from-unit=1K $DFREE) vs Needed: $(numfmt --to=iec --from-unit=1K $REQUIRED_SPACE). Skipping disk.${RESET}"
                 continue # Skip to next disk
             fi
             
@@ -587,52 +642,50 @@ auto_plan_and_execute() {
             CURRENT_FREE_SPACE="$DFREE"
             CURRENT_FOLDER_PATH="$d_path/$share_component"
 
-            # Count files for the current folder on this disk
+            # Count files for the current folder fragment on this disk
             if [ -d "$CURRENT_FOLDER_PATH" ]; then
                 CURRENT_FILE_COUNT=$(find "$CURRENT_FOLDER_PATH" -type f 2>/dev/null | wc -l)
             else
                 CURRENT_FILE_COUNT=0
             fi
             
-            # --- 4. Decision Logic (Prioritization) ---
+            # Store disk metrics for later sorting: FileCount,FreeSpace,DiskName
+            printf "%s,%s,%s\n" "$CURRENT_FILE_COUNT" "$CURRENT_FREE_SPACE" "$disk_name" >> "$TEMP_CANDIDATES"
             
-            # If no disk has been chosen yet, choose this one.
-            if [ -z "$BEST_DEST_DISK" ]; then
-                BEST_DEST_DISK="$disk_name"
-                MAX_FILE_COUNT="$CURRENT_FILE_COUNT"
-                MAX_FREE_SPACE="$CURRENT_FREE_SPACE"
-                continue
-            fi
-            
-            # Primary Check: Does this candidate have MORE files than the current BEST?
-            if [ "$CURRENT_FILE_COUNT" -gt "$MAX_FILE_COUNT" ]; then
-                BEST_DEST_DISK="$disk_name"
-                MAX_FILE_COUNT="$CURRENT_FILE_COUNT"
-                MAX_FREE_SPACE="$CURRENT_FREE_SPACE"
-                continue
-            fi
-            
-            # Secondary Check (Tie-breaker): If file counts are equal, does this candidate have MORE free space?
-            if [ "$CURRENT_FILE_COUNT" -eq "$MAX_FILE_COUNT" ] && [ "$CURRENT_FREE_SPACE" -gt "$MAX_FREE_SPACE" ]; then
-                BEST_DEST_DISK="$disk_name"
-                MAX_FILE_COUNT="$CURRENT_FILE_COUNT"
-                MAX_FREE_SPACE="$CURRENT_FREE_SPACE"
-            fi
+            [ $verbose -gt 2 ] && printf "%b\n" "    ${GREEN}$disk_name PASSED. Metrics: Files=$CURRENT_FILE_COUNT, Free=$(numfmt --to=iec --from-unit=1K $CURRENT_FREE_SPACE)${RESET}"
+
         done # End disk loop
         
-        # 2b. Finalize move for this folder
-        if [ -n "$BEST_DEST_DISK" ]; then
+        # 2b. Select the best destination disk from the candidates
+        BEST_DEST_DISK=""
+        
+        if [ -s "$TEMP_CANDIDATES" ]; then
+            # Sort the candidates:
+            # 1. Primary: Sort by File Count (Field 1) - Numeric, Reverse (Highest first)
+            # 2. Secondary: Sort by Free Space (Field 2) - Numeric, Reverse (Highest first, for tie-breaking)
+            TOP_CANDIDATE=$(sort -t, -k1,1nr -k2,2nr "$TEMP_CANDIDATES" | head -n 1)
+            
+            # Extract metrics from the top candidate
+            BEST_DEST_DISK=$(echo "$TOP_CANDIDATE" | cut -d, -f3)
+            MAX_FILE_COUNT=$(echo "$TOP_CANDIDATE" | cut -d, -f1)
+            MAX_FREE_SPACE=$(echo "$TOP_CANDIDATE" | cut -d, -f2)
+
             # Record the move in the plan
             PLAN_ARRAY+=("$share_component|$BEST_DEST_DISK")
             
             # Print plan item
-            printf "%b\n" "  ${GREEN}[PLAN]: Consolidate '${share_component}' -> ${BLUE}$BEST_DEST_DISK${RESET} (Priority: Files=${BLUE}$MAX_FILE_COUNT${RESET}, Free=${BLUE}$(numfmt --to=iec --from-unit=1K $MAX_FREE_SPACE)${RESET}) (Size: $(numfmt --to=iec --from-unit=1K $folder_size))"
+            printf "%b\n" "  ${GREEN}[PLAN]: Consolidate '${share_component}' -> ${BLUE}$BEST_DEST_DISK${RESET} (Size: $(numfmt --to=iec --from-unit=1K $TOTAL_FOLDER_SIZE))"
+            printf "%b\n" "          Priority: Files=${BLUE}$MAX_FILE_COUNT${RESET}, Free=$(numfmt --to=iec --from-unit=1K $MAX_FREE_SPACE)${RESET}"
 
         else
-            printf "%b\n" "${RED}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $folder_size)) - No disk meets the $(numfmt --to=iec --from-unit=1K $MIN_FREE_SPACE_KB) safety margin requirement.${RESET}"
+            # Use ACTIVE_MIN_FREE_KB here
+            printf "%b\n" "${RED}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $TOTAL_FOLDER_SIZE)) - No disk meets the $(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB) safety margin requirement.${RESET}"
         fi
 
     done < <(find "$BASE_SHARE" -mindepth 1 -maxdepth 1 -type d) # Find all subdirectories
+    
+    # Cleanup temporary file
+    rm -f "$TEMP_CANDIDATES"
 
     # 3. Execute the Plan (Unchanged logic from here)
     echo ""
