@@ -99,7 +99,7 @@ completion.
 This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure
 (`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
 
-````
+
 
 3.  **Run:** Execute the script from the command line:
 
@@ -133,17 +133,15 @@ the `-a` or `-I` flag. If no mode is supplied,  it will prompt you for selection
 
 Run the automatic planner and review the proposed moves without risk:
 
-```bash
+
 ./consld8.sh -a
-```
 
 #### Example (Interactive Force Run)
 
 Select a specific share and folder, then execute the move immediately:
 
-```bash
+
 ./consld8.sh -I -f
-```
 
 -----
 
@@ -173,8 +171,8 @@ You can easily adjust the script's default behavior by editing the constants at 
 | `MIN_FREE_SPACE_KB` | `209715200` | The required minimum free space after consolidation, specified 
 in **1K blocks** (200 GB). This value can also be set interactively during the automatic run. |
 
-```
-```
+
+
 ### Support the Project
 
 If this script helps you keep your unRAID array tidy, please consider supporting its development!
