@@ -1,11 +1,5 @@
-# Script prompts for source folder, then asks for Automatic or Interactive mode. Automatic requires the -f flag (./pai_consld8.sh -f).
-# Using hte Auto and Force the flag -a -f will consold8 all files to drives where the share exists with the most data.
-#The script moves all files including hidden files.
 #
-#Interactive mode can be started from comand line with -I (uppercase)
-#
-# -f (force is required to actually move files)
-#
+# First run (./consld8.sh -h)
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
 # consld8-auto - Fully Automated or Interactive Consolidation for unRAID
@@ -15,6 +9,15 @@ BASE_SHARE="/mnt/user/TVSHOWS"
 # 200 GB minimum free space safety margin (in 1K blocks, as df/du output)
 MIN_FREE_SPACE_KB=209715200
 # ---------------------------------
+
+# --- ANSI Color Definitions ---
+RESET='\033[0m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+BLUE='\033[0;34m'
+# ------------------------------
 
 usage(){
 cat << EOF
@@ -37,7 +40,7 @@ EOF
 }
 
 # Set shell options
-shopt -s nullglob   # enable nullglob to remove words with no matching filenames
+shopt -s nullglob   # FIX: Corrected syntax to enable nullglob option
 [ ${DEBUG:=0} -gt 0 ] && set -x
 
 # --- Variables ---
@@ -71,7 +74,7 @@ while getopts "htfvaI" opt; do
       mode_set_by_arg=true # Only set to true if a mode (-a or -I) is explicitly provided
       ;;
     *)
-      echo "Unknown option (ignored): -$OPTARG" >&2
+      printf "%b\n" "${YELLOW}Unknown option (ignored): -$OPTARG${RESET}" >&2
       ;;
   esac
 done
@@ -79,18 +82,43 @@ shift $((OPTIND-1))
 
 # --- Helper Functions ---
 
+# Function to check if a share component is consolidated (exists on 1 or fewer disks)
+# Argument 1: The share component path (e.g., TVSHOWS/ShowName)
+is_consolidated() {
+    local share_component="$1"
+    local consolidated_disk_count=0
+    
+    # Loop through all possible source disks (including cache)
+    for d_path in /mnt/{disk[1-9]{,[0-9]},cache}; do
+        # Check if the folder path exists on this physical disk
+        if [ -d "$d_path/$share_component" ]; then
+            # Check if it contains files
+            if [ -n "$(find "$d_path/$share_component" -mindepth 1 -type f 2>/dev/null | head -n 1)" ]; then
+                 consolidated_disk_count=$((consolidated_disk_count + 1))
+            fi
+        fi
+    done
+    
+    if [ "$consolidated_disk_count" -le 1 ]; then
+        return 0 # Consolidated (True)
+    else
+        return 1 # Not consolidated (False)
+    fi
+}
+
+
 # Function to safely execute rsync move
 execute_move() {
     local src_dir_name="$1"
     local dest_disk="$2"
     
-    echo ">> Preparing to move '${src_dir_name}' to disk '$dest_disk'..."
+    printf "%b\n" "${CYAN}>> Preparing to move '${src_dir_name}' to disk '$dest_disk'..."
     
     local dest_path="/mnt/$dest_disk/$src_dir_name"
     
     if [ "$dry_run" = true ]; then
-        echo "   [DRY RUN] Would consolidate all fragments of '$src_dir_name' to '$dest_path'."
-        echo "   [DRY RUN] Would use rsync to move and remove source files."
+        printf "%b\n" "   ${YELLOW}[DRY RUN] Would consolidate all fragments of '$src_dir_name' to '$dest_path'.${RESET}"
+        printf "%b\n" "   ${YELLOW}[DRY RUN] Would use rsync to move and remove source files.${RESET}"
         return 0
     fi
     
@@ -103,7 +131,7 @@ execute_move() {
         
         # Check if source directory exists AND it's not the destination disk
         if [ -d "$source_path" ] && [ "/mnt/$dest_disk" != "$d" ]; then
-            [ $verbose -gt 0 ] && echo "   Merging data from $d..."
+            [ $verbose -gt 0 ] && printf "%b\n" "   Merging data from ${BLUE}$d${RESET}..."
 
             # Use rsync to move contents (The safe move: copy and delete source)
             # The trailing slash on the source path means copy *contents* of the directory
@@ -115,21 +143,23 @@ execute_move() {
                 # Attempt to remove the share root on that disk if it's now empty
                 rmdir "$source_path" 2>/dev/null || true
             else
-                echo "   WARNING: Rsync failed from $source_path. Skipping cleanup." >&2
+                printf "%b\n" "${RED}   WARNING: Rsync failed from $source_path. Skipping cleanup.${RESET}" >&2
             fi
         fi
     done
-    echo "Move execution complete for $src_dir_name."
+    printf "%b\n" "${GREEN}Move execution complete for $src_dir_name.${RESET}"
 }
 
 # Function for manual path entry (used as a fallback/alternative)
 configure_manual_base_share() {
     while true; do
-        # Use the current BASE_SHARE as the default prompt value
-        read -r -p "Enter the base share path (e.g., /mnt/user/TVSHOWS). Current: $BASE_SHARE: " NEW_BASE_SHARE_INPUT
+        # FIX: Construct colored prompt using printf -v
+        local prompt_str
+        printf -v prompt_str "Enter the base share path (e.g., /mnt/user/TVSHOWS). Current: %b: " "${BLUE}$BASE_SHARE${RESET}"
+        read -r -p "$prompt_str" NEW_BASE_SHARE_INPUT
         
         if [ -z "$NEW_BASE_SHARE_INPUT" ]; then
-            echo "Using current base share: $BASE_SHARE"
+            printf "%b\n" "Using current base share: ${BLUE}$BASE_SHARE${RESET}"
             break
         fi
         
@@ -137,10 +167,10 @@ configure_manual_base_share() {
         if [ -d "$NEW_BASE_SHARE_INPUT" ]; then
             # Remove trailing slash if present
             BASE_SHARE="${NEW_BASE_SHARE_INPUT%/}"
-            echo "Base Share set to: $BASE_SHARE"
+            printf "%b\n" "Base Share set to: ${BLUE}$BASE_SHARE${RESET}"
             break
         else
-            echo "Error: '$NEW_BASE_SHARE_INPUT' is not a valid directory. Please try again." >&2
+            printf "%b\n" "${RED}Error: '$NEW_BASE_SHARE_INPUT' is not a valid directory. Please try again.${RESET}" >&2
         fi
     done
 }
@@ -148,9 +178,9 @@ configure_manual_base_share() {
 
 # --- Share Selection Logic (New) ---
 select_base_share() {
-    echo "------------------------------------------------"
-    echo "      Select Base Share for Consolidation       "
-    echo "------------------------------------------------"
+    printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
+    printf "%b\n" "${CYAN}      Select Base Share for Consolidation       ${RESET}"
+    printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
     
     # Scan for top-level user shares in /mnt/user/
     local shares=()
@@ -158,7 +188,7 @@ select_base_share() {
     mapfile -t shares < <(find /mnt/user -maxdepth 1 -mindepth 1 -type d -not -name '@*' -printf '%P\n' 2>/dev/null | sort)
 
     if [ ${#shares[@]} -eq 0 ]; then
-        echo "WARNING: No user shares found in /mnt/user/. Proceeding with manual input."
+        printf "%b\n" "${YELLOW}WARNING: No user shares found in /mnt/user/. Proceeding with manual input.${RESET}"
         # Fallback to manual input if no shares are found
         configure_manual_base_share
         return 0
@@ -167,13 +197,16 @@ select_base_share() {
     echo "Available Shares in /mnt/user/:"
     local i=1
     for share_name in "${shares[@]}"; do
-        echo "  $i) $share_name"
+        printf "%b\n" "  ${GREEN}$i${RESET}) $share_name"
         i=$((i + 1))
     done
-    echo "  L) Enter a custom path manually."
+    printf "%b\n" "  ${GREEN}L${RESET}) Enter a custom path manually."
     
     while true; do
-        read -r -p "Enter number of share or 'L' for custom path: " SELECTION
+        # FIX: Construct colored prompt using printf -v
+        local prompt_str
+        printf -v prompt_str "Enter number of share or 'L' for custom path: "
+        read -r -p "$prompt_str" SELECTION
         
         # Check for Manual Input
         if [[ "$SELECTION" == "L" || "$SELECTION" == "l" ]]; then
@@ -185,10 +218,10 @@ select_base_share() {
         if [[ "$SELECTION" =~ ^[0-9]+$ ]] && [ "$SELECTION" -ge 1 ] && [ "$SELECTION" -le ${#shares[@]} ]; then
             SELECTED_SHARE_NAME="${shares[$((SELECTION - 1))]}"
             BASE_SHARE="/mnt/user/$SELECTED_SHARE_NAME"
-            echo "Base Share set to: $BASE_SHARE"
+            printf "%b\n" "Base Share set to: ${BLUE}$BASE_SHARE${RESET}"
             break
         else
-            echo "Invalid selection. Please enter a number between 1 and ${#shares[@]}, or 'L'." >&2
+            printf "%b\n" "${RED}Invalid selection. Please enter a number between 1 and ${#shares[@]}, or 'L'.${RESET}" >&2
         fi
     done
     echo ""
@@ -198,57 +231,119 @@ select_base_share() {
 # --- Interactive Mode Logic ---
 
 interactive_consolidation() {
-    echo "------------------------------------------------"
-    echo "    UnRAID Consolidation Script (Interactive)   "
-    echo "------------------------------------------------"
+    printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
+    printf "%b\n" "${CYAN}    UnRAID Consolidation Script (Interactive)   ${RESET}"
+    printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
     
     if [ "$dry_run" = true ]; then
-        echo ">> MODE: DRY RUN (Test mode). Add -f to execute moves."
+        printf "%b\n" ">> MODE: ${YELLOW}DRY RUN (Test mode). Add -f to execute moves.${RESET}"
     else
-        echo ">> MODE: FORCE (Execution mode). Files WILL be moved."
+        printf "%b\n" ">> MODE: ${GREEN}FORCE (Execution mode). Files WILL be moved.${RESET}"
     fi
     echo ""
-
-    # 1. Select Share/Folder
     
-    echo "DEBUG: Scanning for subfolders in $BASE_SHARE..."
-    # Get all subdirectories of the base share (e.g., TVSHOWS/Show1, TVSHOWS/Show2)
-    mapfile -t FOLDERS < <(find "$BASE_SHARE" -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort)
+    # 1. Consolidation Filter Selection
+    local filter_consolidated=false
+    
+    printf "%b\n" "${CYAN}--- Folder Filtering ---${RESET}"
+    echo "Do you want to exclude folders that are already consolidated (only on one disk)?"
+    printf "%b\n" "  ${GREEN}1${RESET}) Yes, only show fragmented folders (Recommended)."
+    printf "%b\n" "  ${GREEN}2${RESET}) No, show all folders (Consolidated and Fragmented)."
+    
+    while true; do
+        local prompt_str
+        printf -v prompt_str "Select filter option (%b or %b): " "${GREEN}1${RESET}" "${GREEN}2${RESET}"
+        read -r -p "$prompt_str" FILTER_SELECTION
+        case "$FILTER_SELECTION" in
+            1)
+                filter_consolidated=true
+                printf "%b\n" "${YELLOW}Filter set: Only Fragmented folders will be listed.${RESET}"
+                break
+                ;;
+            2)
+                filter_consolidated=false
+                printf "%b\n" "${YELLOW}Filter set: All folders will be listed.${RESET}"
+                break
+                ;;
+            *)
+                printf "%b\n" "${RED}Invalid selection. Please enter 1 or 2.${RESET}"
+                ;;
+        esac
+    done
+    echo ""
 
-    if [ ${#FOLDERS[@]} -eq 0 ]; then
-        echo "ERROR: No subdirectories found in $BASE_SHARE. Exiting." >&2
+    # 2. Select Share/Folder
+    
+    printf "%b\n" "DEBUG: Scanning for subfolders in ${BLUE}$BASE_SHARE${RESET}..."
+    
+    local all_folders=()
+    local filtered_folders=()
+
+    # Get all subdirectories of the base share (e.g., TVSHOWS/Show1, TVSHOWS/Show2)
+    mapfile -t all_folders < <(find "$BASE_SHARE" -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort)
+
+    if [ ${#all_folders[@]} -eq 0 ]; then
+        printf "%b\n" "${RED}ERROR: No subdirectories found in $BASE_SHARE. Exiting.${RESET}" >&2
         exit 1
     fi
 
-    echo "Available Folders in '$BASE_SHARE' to consolidate:"
+    # Apply Filtering
+    for folder_name in "${all_folders[@]}"; do
+        # The full share component path (e.g., TVSHOWS/ShowName)
+        local share_component="${BASE_SHARE#/mnt/user/}/$folder_name"
+        
+        if [ "$filter_consolidated" = true ]; then
+            # If the filter is ON, we only include UNCONSOLIDATED folders (return code 1)
+            if ! is_consolidated "$share_component"; then
+                filtered_folders+=("$folder_name")
+            fi
+        else
+            # If the filter is OFF, include everything
+            filtered_folders+=("$folder_name")
+        fi
+    done
+    
+    # Update FOLDERS array to the filtered list
+    local FOLDERS=("${filtered_folders[@]}")
+
+    if [ ${#FOLDERS[@]} -eq 0 ]; then
+        printf "%b\n" "${GREEN}Success!${RESET} ${YELLOW}Based on your filter, all shares are consolidated or empty. No folders listed for action.${RESET}"
+        return 0
+    fi
+    
+
+    printf "%b\n" "Available Folders in '${BLUE}$BASE_SHARE${RESET}' to consolidate:"
     local i=1
     for folder in "${FOLDERS[@]}"; do
         # Calculate size for display purposes
         local folder_path="$BASE_SHARE/$folder"
         local folder_size_kb=$(du -s "$folder_path" | cut -f 1)
         local formatted_size=$(numfmt --to=iec --from-unit=1K $folder_size_kb)
-        echo "  $i) $folder (Size: $formatted_size)"
+        printf "%b\n" "  ${GREEN}$i${RESET}) $folder (Size: ${BLUE}$formatted_size${RESET})"
         i=$((i + 1))
     done
 
     while true; do
-        read -r -p "Enter the number of the folder to consolidate: " FOLDER_NUM
+        # FIX: Construct colored prompt using printf -v
+        local prompt_str
+        printf -v prompt_str "Enter the number of the folder to consolidate: "
+        read -r -p "$prompt_str" FOLDER_NUM
         if [[ "$FOLDER_NUM" =~ ^[0-9]+$ ]] && [ "$FOLDER_NUM" -ge 1 ] && [ "$FOLDER_NUM" -le ${#FOLDERS[@]} ]; then
             SELECTED_FOLDER="${FOLDERS[$((FOLDER_NUM - 1))]}"
             # The full share component path (e.g., TVSHOWS/ShowName)
             SHARE_COMPONENT="${BASE_SHARE#/mnt/user/}/$SELECTED_FOLDER"
             break
         else
-            echo "Invalid selection. Please enter a number between 1 and ${#FOLDERS[@]}."
+            printf "%b\n" "${RED}Invalid selection. Please enter a number between 1 and ${#FOLDERS[@]}.${RESET}"
         fi
     done
 
-    echo "Selected Folder: $SELECTED_FOLDER"
+    printf "%b\n" "Selected Folder: ${BLUE}$SELECTED_FOLDER${RESET}"
     echo ""
 
-    # 2. Select Destination Disk
+    # 3. Select Destination Disk
     
-    echo "DEBUG: Discovering disks in /mnt/{disk*,cache}..."
+    printf "%b\n" "DEBUG: Discovering disks in /mnt/{disk*,cache}..."
     # Get all available physical disks and cache using robust globbing (FIX)
     local disk_names=()
     for d in /mnt/{disk[1-9]{,[0-9]},cache}; do
@@ -262,7 +357,7 @@ interactive_consolidation() {
 
     # ADDED: Graceful exit if no disks are found
     if [ ${#DISKS[@]} -eq 0 ]; then
-        echo "ERROR: No disks or cache drives found in /mnt (looking for /mnt/disk* or /mnt/cache). Cannot proceed." >&2
+        printf "%b\n" "${RED}ERROR: No disks or cache drives found in /mnt (looking for /mnt/disk* or /mnt/cache). Cannot proceed.${RESET}" >&2
         return 1
     fi
     
@@ -273,39 +368,45 @@ interactive_consolidation() {
         # CRITICAL FIX: Robustly get the Available blocks
         local current_free=$(df -P "$disk_path" 2>/dev/null | tail -1 | awk '{ print $4 }')
         local formatted_free=$(numfmt --to=iec --from-unit=1K "${current_free:-0}")
-        echo "  $i) $disk (Free: $formatted_free)"
+        printf "%b\n" "  ${GREEN}$i${RESET}) $disk (Free: ${BLUE}$formatted_free${RESET})"
         i=$((i + 1))
     done
 
     while true; do
-        read -r -p "Enter the number of the destination disk: " DISK_NUM
+        # FIX: Construct colored prompt using printf -v
+        local prompt_str
+        printf -v prompt_str "Enter the number of the destination disk: "
+        read -r -p "$prompt_str" DISK_NUM
         if [[ "$DISK_NUM" =~ ^[0-9]+$ ]] && [ "$DISK_NUM" -ge 1 ] && [ "$DISK_NUM" -le ${#DISKS[@]} ]; then
             SELECTED_DISK="${DISKS[$((DISK_NUM - 1))]}"
             break
         else
-            echo "Invalid selection. Please enter a number between 1 and ${#DISKS[@]}."
+            printf "%b\n" "${RED}Invalid selection. Please enter a number between 1 and ${#DISKS[@]}.${RESET}"
         fi
     done
 
-    echo "Selected Destination Disk: $SELECTED_DISK"
+    printf "%b\n" "Selected Destination Disk: ${BLUE}$SELECTED_DISK${RESET}"
     echo ""
     
-    # 3. Confirmation and Execution
+    # 4. Confirmation and Execution
 
     if [ "$dry_run" = true ]; then
-        local confirmation_message="DRY RUN enabled."
+        local confirmation_message="${YELLOW}DRY RUN enabled.${RESET}"
     else
-        local confirmation_message="This will MOVE all files. THIS CANNOT BE UNDONE."
+        local confirmation_message="${RED}This will MOVE all files. THIS CANNOT BE UNDONE.${RESET}"
     fi
 
-    echo "--- CONFIRMATION ---"
-    echo "Folder to Consolidate: $SELECTED_FOLDER (Full Path: $SHARE_COMPONENT)"
-    echo "Target Destination Disk: $SELECTED_DISK (/mnt/$SELECTED_DISK/$SHARE_COMPONENT)"
-    echo "$confirmation_message"
-    echo "--------------------"
+    printf "%b\n" "${CYAN}--- CONFIRMATION ---${RESET}"
+    printf "%b\n" "Folder to Consolidate: ${BLUE}$SELECTED_FOLDER${RESET} (Full Path: ${BLUE}$SHARE_COMPONENT${RESET})"
+    printf "%b\n" "Target Destination Disk: ${BLUE}$SELECTED_DISK${RESET} (/mnt/$SELECTED_DISK/$SHARE_COMPONENT)"
+    printf "%b\n" "$confirmation_message"
+    printf "%b\n" "${CYAN}--------------------${RESET}"
 
     while true; do
-        read -r -p "Proceed with consolidation? (yes/no): " CONFIRM
+        # FIX: Construct colored prompt using printf -v
+        local prompt_str
+        printf -v prompt_str "Proceed with consolidation? (yes/no): "
+        read -r -p "$prompt_str" CONFIRM
         case "$CONFIRM" in
             [Yy][Ee][Ss])
                 execute_move "$SHARE_COMPONENT" "$SELECTED_DISK"
@@ -316,11 +417,11 @@ interactive_consolidation() {
                 return 0
                 ;;
             [Nn][Oo])
-                echo "Consolidation cancelled by user."
+                printf "%b\n" "${YELLOW}Consolidation cancelled by user.${RESET}"
                 return 1
                 ;;
             *)
-                echo "Please answer 'yes' or 'no'."
+                printf "%b\n" "${RED}Please answer 'yes' or 'no'.${RESET}"
                 ;;
         esac
     done
@@ -330,16 +431,16 @@ interactive_consolidation() {
 # --- Core Logic for Automated Planning (Fixed the 'end' syntax) ---
 
 auto_plan_and_execute() {
-    echo "--------------------------------------------------------"
-    echo "  Starting FULL AUTOMATED CONSOLIDATION PLANNER         "
-    echo "--------------------------------------------------------"
-    echo "Base Share: $BASE_SHARE"
-    echo "Safety Margin: $(numfmt --to=iec --from-unit=1K $MIN_FREE_SPACE_KB) minimum free space"
+    printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
+    printf "%b\n" "${CYAN}  Starting FULL AUTOMATED CONSOLIDATION PLANNER         ${RESET}"
+    printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
+    printf "%b\n" "Base Share: ${BLUE}$BASE_SHARE${RESET}"
+    printf "%b\n" "Safety Margin: ${BLUE}$(numfmt --to=iec --from-unit=1K $MIN_FREE_SPACE_KB)${RESET} minimum free space"
     
     if [ "$dry_run" = true ]; then
-        echo ">> MODE: DRY RUN (Planning Only, no files will move)"
+        printf "%b\n" ">> MODE: ${YELLOW}DRY RUN (Planning Only, no files will move)${RESET}"
     else
-        echo ">> MODE: FORCE (Files WILL be moved)"
+        printf "%b\n" ">> MODE: ${GREEN}FORCE (Files WILL be moved)${RESET}"
     fi
     echo ""
 
@@ -349,7 +450,7 @@ auto_plan_and_execute() {
     
     # 1. Initialize Disk Free Space and Share Usage for all disks
     echo "Scanning initial disk state..."
-    echo "DEBUG: Discovering disks in /mnt/{disk*,cache} and fetching free space..."
+    printf "%b\n" "DEBUG: Discovering disks in /mnt/{disk*,cache} and fetching free space..."
     for d_path in /mnt/{disk[1-9]{,[0-9]},cache}; do
         disk_name="${d_path#/mnt/}"
         
@@ -359,7 +460,7 @@ auto_plan_and_execute() {
         # Check if current_free is empty or non-numeric (setting to 0 if invalid)
         if ! [[ "$current_free" =~ ^[0-9]+$ ]]; then
             current_free=0
-            echo "  WARNING: Failed to read free space for $disk_name. Assuming 0KB free."
+            printf "%b\n" "${YELLOW}  WARNING: Failed to read free space for $disk_name. Assuming 0KB free.${RESET}"
         fi
         
         DISK_FREE["$disk_name"]="$current_free"
@@ -375,7 +476,7 @@ auto_plan_and_execute() {
         fi
         DISK_SHARE_USAGE["$disk_name"]="$current_share_usage"
         
-        [ $verbose -gt 1 ] && echo "  $disk_name: Free=$(numfmt --to=iec --from-unit=1K ${DISK_FREE[$disk_name]}), ShareUsed=$(numfmt --to=iec --from-unit=1K ${DISK_SHARE_USAGE[$disk_name]})"
+        [ $verbose -gt 1 ] && printf "%b\n" "  $disk_name: Free=${BLUE}$(numfmt --to=iec --from-unit=1K ${DISK_FREE[$disk_name]})${RESET}, ShareUsed=${BLUE}$(numfmt --to=iec --from-unit=1K ${DISK_SHARE_USAGE[$disk_name]})${RESET}"
     done
     
     # Array to hold the final execution plan
@@ -396,26 +497,12 @@ auto_plan_and_execute() {
         
         if [ "$folder_size" -lt 10 ]; then continue; fi
 
-        # --- NEW LOGIC: Check if folder is already consolidated ---
-        CONSOLIDATED_DISK_COUNT=0
-        for d_path in /mnt/{disk[1-9]{,[0-9]},cache}; do
-            # Check if the folder path exists on this physical disk
-            if [ -d "$d_path/$share_component" ]; then
-                
-                # *** FIX FOR BROKEN PIPE ERROR ***
-                # Check if it contains files by capturing the output of find | head
-                if [ -n "$(find "$d_path/$share_component" -mindepth 1 -type f 2>/dev/null | head -n 1)" ]; then
-                     CONSOLIDATED_DISK_COUNT=$((CONSOLIDATED_DISK_COUNT + 1))
-                fi
-                # --- END FIX ---
-            fi
-        done
-
-        if [ "$CONSOLIDATED_DISK_COUNT" -le 1 ]; then
-            echo "  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $folder_size)) - Already consolidated to $CONSOLIDATED_DISK_COUNT disk(s). Skipping calculation."
+        # --- Check if folder is already consolidated ---
+        if is_consolidated "$share_component"; then
+            printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $folder_size)) - Already consolidated. Skipping calculation.${RESET}"
             continue
         fi
-        # --- END NEW LOGIC ---
+        # --- END Check ---
 
         # Tracking variables for the new priority logic
         MAX_FILE_COUNT=-1
@@ -450,7 +537,7 @@ auto_plan_and_execute() {
             # --- 2. Safety Check (Must pass this to be considered) ---
             DFREE="${DISK_FREE[$disk_name]}"
             if [ "$((DFREE - REQUIRED_SPACE))" -lt "$MIN_FREE_SPACE_KB" ]; then
-                [ $verbose -gt 2 ] && echo "    $disk_name FAILED safety check. Free: $(numfmt --to=iec --from-unit=1K $DFREE) vs Needed: $(numfmt --to=iec --from-unit=1K $REQUIRED_SPACE). Skipping."
+                [ $verbose -gt 2 ] && printf "%b\n" "    ${YELLOW}$disk_name FAILED safety check. Free: $(numfmt --to=iec --from-unit=1K $DFREE) vs Needed: $(numfmt --to=iec --from-unit=1K $REQUIRED_SPACE). Skipping.${RESET}"
                 continue # Skip to next disk
             fi
             
@@ -497,28 +584,28 @@ auto_plan_and_execute() {
             PLAN_ARRAY+=("$share_component|$BEST_DEST_DISK")
             
             # Print plan item
-            echo "  [PLAN]: Consolidate '${share_component}' -> $BEST_DEST_DISK (Priority: Files=$MAX_FILE_COUNT, Free=$(numfmt --to=iec --from-unit=1K $MAX_FREE_SPACE)) (Size: $(numfmt --to=iec --from-unit=1K $folder_size))"
+            printf "%b\n" "  ${GREEN}[PLAN]: Consolidate '${share_component}' -> ${BLUE}$BEST_DEST_DISK${RESET} (Priority: Files=${BLUE}$MAX_FILE_COUNT${RESET}, Free=${BLUE}$(numfmt --to=iec --from-unit=1K $MAX_FREE_SPACE)${RESET}) (Size: $(numfmt --to=iec --from-unit=1K $folder_size))"
 
         else
-            echo "  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $folder_size)) - No disk meets the $(numfmt --to=iec --from-unit=1K $MIN_FREE_SPACE_KB) safety margin requirement."
+            printf "%b\n" "${RED}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $folder_size)) - No disk meets the $(numfmt --to=iec --from-unit=1K $MIN_FREE_SPACE_KB) safety margin requirement.${RESET}"
         fi
 
     done < <(find "$BASE_SHARE" -mindepth 1 -maxdepth 1 -type d) # Find all subdirectories
 
     # 3. Execute the Plan (Unchanged logic from here)
     echo ""
-    echo "--------------------------------------------------------"
+    printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
     if [ "${#PLAN_ARRAY[@]}" -eq 0 ]; then
-        echo "The plan is empty. No moves required or possible."
+        printf "%b\n" "${YELLOW}The plan is empty. No moves required or possible.${RESET}"
         return 0
     fi
     
     if [ "$dry_run" = true ]; then
-        echo "PLAN COMPLETE. Rerun with -f to execute moves."
+        printf "%b\n" "${YELLOW}PLAN COMPLETE. Rerun with -f to execute moves.${RESET}"
         return 0
     fi
     
-    echo "Executing Plan..."
+    printf "%b\n" "${CYAN}Executing Plan...${RESET}"
     
     for plan_item in "${PLAN_ARRAY[@]}"; do
         SRCDIR="${plan_item%|*}"        
@@ -526,10 +613,10 @@ auto_plan_and_execute() {
         
         execute_move "$SRCDIR" "$DESTDISK"
         
-        echo "Move complete for $SRCDIR."
+        printf "%b\n" "${GREEN}Move complete for $SRCDIR.${RESET}"
     done
 
-    echo "ALL MOVES COMPLETE."
+    printf "%b\n" "${GREEN}ALL MOVES COMPLETE.${RESET}"
 }
 
 # --- Main Execution Flow ---
@@ -537,16 +624,20 @@ auto_plan_and_execute() {
 # 1. Determine operation mode (Auto or Interactive)
 # This block now runs first if no mode flag was supplied.
 if [ "$mode_set_by_arg" = false ]; then
-    echo "------------------------------------------------"
-    echo "       UnRAID Consolidation Mode Selection      "
-    echo "------------------------------------------------"
+    printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
+    printf "%b\n" "${CYAN}       UnRAID Consolidation Mode Selection      ${RESET}"
+    printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
     echo "No operation mode (-a or -I) was specified. Please select a mode to proceed."
-    echo "1) Interactive Mode: Select folder and destination disk manually."
-    echo "2) Automatic Mode: Scan all shares, plan, and execute optimized moves."
+    printf "%b\n" "  ${GREEN}1${RESET}) Interactive Mode: Select folder and destination disk manually."
+    printf "%b\n" "  ${GREEN}2${RESET}) Automatic Mode: Scan all shares, plan, and execute optimized moves."
     echo ""
 
+    # FIX: Construct colored prompt using printf -v
+    main_prompt_str=""
+    printf -v main_prompt_str "Select mode (%b or %b): " "${GREEN}1${RESET}" "${GREEN}2${RESET}"
+
     while true; do
-        read -r -p "Select mode (1 or 2): " MODE_SELECTION
+        read -r -p "$main_prompt_str" MODE_SELECTION
         case "$MODE_SELECTION" in
             1)
                 auto_mode=false
@@ -557,7 +648,7 @@ if [ "$mode_set_by_arg" = false ]; then
                 break
                 ;;
             *)
-                echo "Invalid selection. Please enter 1 for Interactive or 2 for Automatic."
+                printf "%b\n" "${RED}Invalid selection. Please enter 1 for Interactive or 2 for Automatic.${RESET}"
                 ;;
         esac
     done
