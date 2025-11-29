@@ -62,7 +62,7 @@ mounting structure (`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilit
 
 2.  **Make Executable:** Set the execution permission:
 
-```bash
+
 chmod +x /consld8.sh
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
