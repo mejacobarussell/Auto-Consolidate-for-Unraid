@@ -3,53 +3,118 @@
 This script was inspired and basedon the original unRAID diskmv script, it is HEAVLY modified from the original diskmv script by trinapicot.
 See: https://github.com/trinapicot/unraid-diskmv
 
-This Bash script is designed to automatically plan and execute consolidation of data within a specific unRAID user share (/mnt/user/TVSHOWS by default) onto the array's physical disks. Its primary goal is to ensure folders are contained on a single, optimal disk while strictly maintaining a disk space safety margin.
 
-⚙️ Core Operational Flow
-The script operates in three main phases when run in Automatic Mode (-a): Scanning, Planning, and Execution.
+Here is the complete README file for `consld8.sh` as a single, copyable block of text:
 
-1. Scanning and Initialization
+````markdown
+## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
-The script first establishes the current state of your unRAID array and share usage:
+A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single physical disk, ensuring optimal disk utilization and organization.
 
-Disk State: It iterates through all physical disks (disk1, disk2, etc., and cache). It uses a robust method (df -P) to calculate the exact Available Free Space on each disk and the current usage of the entire $BASE_SHARE across all disks. This data is stored in associative arrays for fast lookups.
+### 📝 Table of Contents
 
-2. Planning Phase (The Optimization Logic)
+* [Features](#-features)
+* [Prerequisites](#-prerequisites)
+* [Installation](#-installation)
+* [Usage](#-usage)
+    * [Mode Selection](#mode-selection)
+    * [Options](#options)
+* [Automatic Mode Logic](#automatic-mode-logic)
+* [Configuration](#configuration)
 
-The script iterates through every subfolder (e.g., /mnt/user/TVSHOWS/ShowName) and determines the single best destination disk based on a three-tiered set of rules.
+---
 
+## ✨ Features
 
-***********(In this version the Share folder is hard coded please change as you need too)
+* **Two Modes:** Fully **Automatic** planning and execution, or step-by-step **Interactive** control.
+* **Safety Margin:** Uses a configurable minimum free space buffer (**200 GB by default**) to prevent overfilling target disks.
+* **Dry Run Support:** The default mode is a **test run** (`-t`), allowing you to review the plan before committing any changes.
+* **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest fragment** (highest file count) of the folder to minimize total data movement.
+* **Safe Execution:** Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful completion.
 
-A. Pre-Consolidation Check (Efficiency Guard)
+---
 
-The script first checks how many physical disks currently contain files for the specific folder being analyzed.
+## 🛠️ Prerequisites
 
-If the folder's files exist on only 0 or 1 disk, the folder is immediately skipped from the plan. This prevents the script from wasting time calculating moves for data that is already consolidated.
+This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure (`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
 
-B. Safety Check (The Hard Requirement)
+---
 
-For any remaining fragmented folder, the script calculates the total required space for all components of the entire share to land on the candidate disk.
+## 🚀 Installation
 
-The candidate disk is only deemed eligible if its Final Free Space (Current Free Space minus the Required Consolidation Size) is greater than the 200 GB Safety Margin ($MIN_FREE_SPACE_KB). Disks failing this test are immediately eliminated from consideration.
+1.  **Save the Script:** Save the script content to a file named `consld8.sh` on your unRAID server (e.g., in `/boot/config/scripts/`).
+2.  **Make Executable:** Set the execution permission:
 
-C. Prioritization (Optimization)
+```bash
+chmod +x /boot/config/scripts/consld8.sh
+````
 
-If multiple disks pass the Safety Check, the script follows this strict hierarchy to select the single best disk:
+3.  **Run:** Execute the script from the command line:
 
-Primary Rule (Max Files): It chooses the disk that currently holds the highest number of files for the folder component being analyzed. This minimizes the amount of data that needs to be copied into the destination disk, reducing I/O and movement time.
+<!-- end list -->
 
-Secondary Rule (Max Free Space): If two or more disks are tied for the highest file count (e.g., both are empty), the script selects the disk with the most total available free space.
+```bash
+/boot/config/scripts/consld8.sh
+```
 
-The chosen folder and destination disk are then recorded in the final $PLAN_ARRAY.
+-----
 
-3. Execution Phase (Moving Data)
+## 💡 Usage
 
-If the script is run with the Force flag (-f), it executes the plan recorded in the $PLAN_ARRAY.
+The script requires you to explicitly select either **Automatic** or **Interactive** mode using the `-a` or `-I` flag. If no mode is supplied, it will prompt you for selection.
 
-Iterative Move: For each folder, the script iterates through all physical source disks (including cache).
+### Mode Selection
 
-Safe Transfer: It uses rsync -avh --remove-source-files to copy files from the source disk into the single, designated destination disk. The --remove-source-files flag ensures files are only deleted from the source after a successful transfer.
+| Flag | Mode | Description |
+| :--- | :--- | :--- |
+| `-a` | **Automatic** | Scans all sub-folders within the selected share, calculates the optimal target disk for each, and generates a plan. |
+| `-I` | **Interactive** | Allows you to manually select the base share, the specific fragmented sub-folder, and the exact destination disk. |
 
-Cleanup: After the transfer completes successfully, the script safely removes any empty directories left behind on the source disks using find ... -type d -empty -delete.
+### Options
 
+| Flag | Name | Default | Applies to | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `-h` | Help | N/A | Both | Display the usage information and exit. |
+| `-t` | Test Run | `true` | Both | **(Default)** Only generates the plan/reports the move. No files are moved. |
+| `-f` | Force Execute | `false` | Both | **Overrides** the test run. Files **WILL** be moved and deleted from original locations. |
+| `-v` | Verbose | `1` | Both | Increases detail, useful for troubleshooting the planning logic in Auto Mode. |
+
+#### Example (Automatic Dry Run)
+
+Run the automatic planner and review the proposed moves without risk:
+
+```bash
+./consld8.sh -a
+```
+
+#### Example (Interactive Force Run)
+
+Select a specific share and folder, then execute the move immediately:
+
+```bash
+./consld8.sh -I -f
+```
+
+-----
+
+## 🧠 Automatic Mode Logic
+
+The automatic planner uses a prioritized system to choose the best destination disk for consolidating a fragmented folder:
+
+1.  **Safety Check (Must Pass):** The proposed move must ensure the target disk's final free space is greater than the configured **Safety Margin** (`MIN_FREE_SPACE_KB`). Disks failing this are ignored.
+2.  **Primary Metric (Maximize existing data):** Among all safe disks, the script selects the disk that **already contains the highest number of files** belonging to the folder being consolidated. This minimizes the I/O operations required.
+3.  **Secondary Metric (Tie-breaker):** If multiple disks tie for the highest file count, the script chooses the one with the **most free space**.
+
+-----
+
+## ⚙️ Configuration
+
+You can easily adjust the script's default behavior by editing the constants at the top of the `consld8.sh` file.
+
+| Constant | Default Value | Description |
+| :--- | :--- | :--- |
+| `BASE_SHARE` | `"/mnt/user/TVSHOWS"` | The default starting user share path if one is not manually selected. |
+| `MIN_FREE_SPACE_KB` | `209715200` | The required minimum free space after consolidation, specified in **1K blocks** (200 GB). This value can also be set interactively during the automatic run. |
+
+```
+```
