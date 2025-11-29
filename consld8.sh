@@ -1,6 +1,3 @@
-#
-# First run (./consld8.sh -h)
-#
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
 # consld8-auto - Fully Automated or Interactive Consolidation for unRAID
@@ -41,7 +38,7 @@ EOF
 }
 
 # Set shell options
-shopt -s nullglob  # Corrected syntax to enable nullglob option
+shopt -s nullglob   # Corrected syntax to enable nullglob option
 [ ${DEBUG:=0} -gt 0 ] && set -x
 
 # --- Variables ---
@@ -97,7 +94,7 @@ is_consolidated() {
         if [ -d "$d_path/$share_component" ]; then
             # Check if it contains files
             if [ -n "$(find "$d_path/$share_component" -mindepth 1 -type f 2>/dev/null | head -n 1)" ]; then
-                 consolidated_disk_count=$((consolidated_disk_count + 1))
+                consolidated_disk_count=$((consolidated_disk_count + 1))
             fi
         fi
     done
@@ -219,7 +216,7 @@ configure_manual_base_share() {
 # --- Share Selection Logic (New) ---
 select_base_share() {
     printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
-    printf "%b\n" "${CYAN}      Select Base Share for Consolidation       ${RESET}"
+    printf "%b\n" "${CYAN}       Select Base Share for Consolidation       ${RESET}"
     printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
     
     # Scan for top-level user shares in /mnt/user/
@@ -262,7 +259,7 @@ select_base_share() {
             break
         else
             printf "%b\n" "${RED}Invalid selection. Please enter a number between 1 and ${#shares[@]}, or 'L'.${RESET}" >&2
-        */
+        # FIX: Removed stray '*/' which caused the EOF error
         fi
     done
     echo ""
@@ -273,7 +270,7 @@ select_base_share() {
 
 interactive_consolidation() {
     printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
-    printf "%b\n" "${CYAN}    UnRAID Consolidation Script (Interactive)   ${RESET}"
+    printf "%b\n" "${CYAN}     UnRAID Consolidation Script (Interactive)   ${RESET}"
     printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
     
     if [ "$dry_run" = true ]; then
@@ -352,7 +349,7 @@ interactive_consolidation() {
         return 0
     fi
     
-
+    
     printf "%b\n" "Available Folders in '${BLUE}$BASE_SHARE${RESET}' to consolidate:"
     local i=1
     for folder in "${FOLDERS[@]}"; do
@@ -512,10 +509,9 @@ prompt_for_min_free_space() {
 
 auto_plan_and_execute() {
     printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
-    printf "%b\n" "${CYAN}  Starting FULL AUTOMATED CONSOLIDATION PLANNER         ${RESET}"
+    printf "%b\n" "${CYAN}     Starting FULL AUTOMATED CONSOLIDATION PLANNER        ${RESET}"
     printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
     
-
     # NEW: Prompt for minimum free space before proceeding with the scan
     prompt_for_min_free_space
 
@@ -528,6 +524,39 @@ auto_plan_and_execute() {
         printf "%b\n" ">> MODE: ${GREEN}FORCE (Files WILL be moved)${RESET}"
     fi
     echo ""
+
+    # =====================================================================
+    # NEW STEP 1: CONSOLIDATED FOLDER DISPLAY PROMPT
+    # =====================================================================
+    local show_consolidated_skips=false
+    
+    printf "%b\n" "${CYAN}--- Scan Verbosity ---${RESET}"
+    echo "Do you want to display folders that are already consolidated and will be skipped?"
+    printf "%b\n" "  ${GREEN}1${RESET}) Yes, show detailed skip messages (More verbose)."
+    printf "%b\n" "  ${GREEN}2${RESET}) No, hide skip messages (Less verbose/default)."
+    
+    while true; do
+        local prompt_str
+        printf -v prompt_str "Select display option (%b or %b): " "${GREEN}1${RESET}" "${GREEN}2${RESET}"
+        read -r -p "$prompt_str" DISPLAY_SELECTION
+        case "$DISPLAY_SELECTION" in
+            1)
+                show_consolidated_skips=true
+                printf "%b\n" "${YELLOW}Scan set: Skipped (Consolidated) folders will be detailed.${RESET}"
+                break
+                ;;
+            2)
+                show_consolidated_skips=false
+                printf "%b\n" "${YELLOW}Scan set: Skipped (Consolidated) folders will be hidden from output.${RESET}"
+                break
+                ;;
+            *)
+                printf "%b\n" "${RED}Invalid selection. Please enter 1 or 2.${RESET}"
+                ;;
+        esac
+    done
+    echo ""
+    # =====================================================================
 
     # Declare associative arrays to track disk state during planning
     declare -A DISK_FREE
@@ -588,7 +617,9 @@ auto_plan_and_execute() {
 
         # --- Check if folder is already consolidated ---
         if is_consolidated "$share_component"; then
-            printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $folder_size)) - Already consolidated. Skipping calculation.${RESET}"
+            if [ "$show_consolidated_skips" = true ]; then
+                printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $folder_size)) - Already consolidated. Skipping calculation.${RESET}"
+            fi
             continue
         fi
         # --- END Check ---
@@ -604,8 +635,8 @@ auto_plan_and_execute() {
         done
         # Sanity check for size: if no fragments found with size, skip.
         if [ "$TOTAL_FOLDER_SIZE" -eq 0 ]; then
-             printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' - No file fragments found. Skipping.${RESET}"
-             continue
+              printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' - No file fragments found. Skipping.${RESET}"
+              continue
         fi
         
         # Reset candidate file
@@ -675,7 +706,7 @@ auto_plan_and_execute() {
             
             # Print plan item
             printf "%b\n" "  ${GREEN}[PLAN]: Consolidate '${share_component}' -> ${BLUE}$BEST_DEST_DISK${RESET} (Size: $(numfmt --to=iec --from-unit=1K $TOTAL_FOLDER_SIZE))"
-            printf "%b\n" "          Priority: Files=${BLUE}$MAX_FILE_COUNT${RESET}, Free=$(numfmt --to=iec --from-unit=1K $MAX_FREE_SPACE)${RESET}"
+            printf "%b\n" "             Priority: Files=${BLUE}$MAX_FILE_COUNT${RESET}, Free=$(numfmt --to=iec --from-unit=1K $MAX_FREE_SPACE)${RESET}"
 
         else
             # Use ACTIVE_MIN_FREE_KB here
@@ -720,7 +751,7 @@ auto_plan_and_execute() {
 # This block now runs first if no mode flag was supplied.
 if [ "$mode_set_by_arg" = false ]; then
     printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
-    printf "%b\n" "${CYAN}       UnRAID Consolidation Mode Selection      ${RESET}"
+    printf "%b\n" "${CYAN}      UnRAID Consolidation Mode Selection      ${RESET}"
     printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
     echo "No operation mode (-a or -I) was specified. Please select a mode to proceed."
     printf "%b\n" "  ${GREEN}1${RESET}) Interactive Mode: Select folder and destination disk manually."
