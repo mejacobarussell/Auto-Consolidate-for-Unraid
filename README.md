@@ -57,10 +57,11 @@ This script is written in **Bash** and requires standard Linux tools available o
 
 1.  **SSH into your unRAID server.**
 2.  **Download the script:**
-    ```bash
-    wget [https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/consld8-1.0.3.sh]9https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/consld8-1.0.3.sh)\
 
-        ```
+      ```bash
+    wget [https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/consld8-1.0.3.sh]9https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/consld8-1.0.3.sh)
+ ``
+
 3.  **Make the script executable:**
 
     ```bash
