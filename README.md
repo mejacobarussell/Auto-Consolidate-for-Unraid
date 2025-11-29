@@ -15,7 +15,7 @@ If this script helps you keep your unRAID array tidy, please consider supporting
 ![image](https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/example.png)
 
 
- # 💾 consld8-auto: UnRAID Share Consolidation Script
+ # 💾 consld8: UnRAID Share Consolidation Script
 
 **A powerful bash script for managing and consolidating fragmented user shares across your unRAID array disks.**
 
@@ -58,11 +58,11 @@ This script is written in **Bash** and requires standard Linux tools available o
 1.  **SSH into your unRAID server.**
 2.  **Download the script:**
     ```bash
-    wget [https://raw.githubusercontent.com/](https://raw.githubusercontent.com/)[Your-Username]/[Your-Repo]/main/consld8-1.0.3.sh -O /boot/config/plugins/user.scripts/scripts/consld8-auto.sh
+    wget [https://raw.githubusercontent.com/](https://raw.githubusercontent.com/)[Your-Username]/[Your-Repo]/main/consld8-1.0.3.sh -O /consld8.sh.sh
     ```
 3.  **Make the script executable:**
     ```bash
-    chmod +x /boot/config/plugins/user.scripts/scripts/consld8-auto.sh
+    chmod +x consld8.sh
     ```
 4.  *(Optional but Recommended):* Run it using the **User Scripts** plugin on unRAID for easier management.
 
