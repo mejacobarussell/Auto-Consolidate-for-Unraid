@@ -15,166 +15,82 @@ If this script helps you keep your unRAID array tidy, please consider supporting
 ![image](https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/example.png)
 
 
+ # 💾 consld8-auto: UnRAID Share Consolidation Script
 
-## 📦 `consld8.sh`: UnRAID Share Consolidation Script
+**A powerful bash script for managing and consolidating fragmented user shares across your unRAID array disks.**
 
-A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders)
-onto a single physical disk, ensuring optimal disk utilization and organization.
-
-### 📝 Table of Contents
-
-* [Features](#-features)
-* [Prerequisites](#-prerequisites)
-* [Installation](#-installation)
-* [Usage](#-usage)
-    * [Mode Selection](#mode-selection)
-    * [Options](#options)
-* [Automatic Mode Logic](#automatic-mode-logic)
-* [Configuration](#configuration)
+This script automates or facilitates the safe movement of files from fragmented shares (like `TVSHOWS` or `MOVIES`) to a single target disk/cache drive, optimizing disk usage and spin-down efficiency.
 
 ---
 
-## ✨ Features
+## 💡 About consld8-auto
 
-* **Two Modes:** Fully **Automatic** planning and execution, or step-by-step 
-**Interactive** control. * **Safety Margin:** Uses a configurable minimum free space buffer
-(**200 GB by default**) to prevent overfilling target disks.* **Dry Run Support:** The default
-mode is a **test run** (`-t`), allowing you to review the plan before committing any changes. *
-**Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds the largest
-fragment** (highest file count) of the folder to minimize total data movement. * **Safe Execution:**
-Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon
-successful completion.
+In an unRAID environment, user shares often become fragmented, with different parts of the same logical folder spread across multiple physical disks. `consld8-auto` solves this by safely moving all file fragments of a selected sub-folder (e.g., a specific TV show or movie folder) to a single, chosen destination disk using `rsync` with the `--remove-source-files` option for maximum safety and efficiency.
 
----
+### Key Features
 
-## 🛠️ Prerequisites
-
-This script is designed to run directly on an **unRAID** server, as it relies on the specific disk
-mounting structure (`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities 
-(`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
+* **Dual Operation Modes:** Run in **Interactive Mode** for manual control, or **Automatic Mode** for fully optimized consolidation planning.
+* **Intelligent Planning (Auto Mode):** The script scans fragmented folders and selects the optimal destination disk based on a tiered priority system:
+    1.  **Safety Margin:** Must meet a configurable minimum free space (default 200 GB) after the move.
+    2.  **Existing Files:** Prioritizes moving to the disk that **already holds the most files** for that specific folder, reducing I/O and increasing the likelihood of successful spin-down.
+    3.  **Free Space:** Uses available free space as a tie-breaker.
+* **Dry Run/Test Mode:** Default-enabled safety feature to simulate the entire move process without touching files.
+* **User Share Selector:** Easily pick the top-level user share (e.g., `TVSHOWS`, `MOVIES`) to process.
+* **Safe Execution:** Uses `rsync -avh --remove-source-files` to ensure the move completes before the source files are deleted.
 
 ---
 
-## 🚀 Installation
+## 🛠️ Getting Started
 
-1.  **Save the Script:** Save the script content to a file named `consld8.sh` on your unRAID server
-(e.g., in `/boot/config/scripts/`).
+### Prerequisites
 
-2.  **Make Executable:** Set the execution permission:
+This script is written in **Bash** and requires standard Linux tools available on the unRAID OS, including:
 
+* **Bash** (v4.0 or higher is recommended)
+* `find`
+* `du` and `df`
+* `awk`
+* `rsync`
+* `numfmt` (standard utility for human-readable size formatting)
 
-chmod +x /consld8.sh
-## 📦 `consld8.sh`: UnRAID Share Consolidation Script
+### Installation
 
-A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented
-user shares (sub-folders) onto a single physical disk, ensuring optimal disk utilization and organization.
-
-### 📝 Table of Contents
-
-* [Features](#-features)
-* [Prerequisites](#-prerequisites)
-* [Installation](#-installation)
-* [Usage](#-usage)
-    * [Mode Selection](#mode-selection)
-    * [Options](#options)
-* [Automatic Mode Logic](#automatic-mode-logic)
-* [Configuration](#configuration)
-
----
-
-## ✨ Features
-
-* **Two Modes:** Fully **Automatic** planning and execution, or step-by-step **Interactive** control.
-* **Safety Margin:** Uses a configurable minimum free space buffer (**200 GB by default**) to prevent overfilling
-target disks. * **Dry Run Support:** The default mode is a **test run** (`-t`), allowing you to review the plan before 
-committing any changes. * **Smart Planning (Auto Mode):** Prioritizes consolidation to the disk that **already holds
-the largest fragment** (highest file count) of the folder to minimize total data movement.* **Safe Execution:**
-Utilizes `rsync -avh --remove-source-files` to safely copy data and only delete the source files upon successful
-completion.
+1.  **SSH into your unRAID server.**
+2.  **Download the script:**
+    ```bash
+    wget [https://raw.githubusercontent.com/](https://raw.githubusercontent.com/)[Your-Username]/[Your-Repo]/main/consld8-1.0.3.sh -O /boot/config/plugins/user.scripts/scripts/consld8-auto.sh
+    ```
+3.  **Make the script executable:**
+    ```bash
+    chmod +x /boot/config/plugins/user.scripts/scripts/consld8-auto.sh
+    ```
+4.  *(Optional but Recommended):* Run it using the **User Scripts** plugin on unRAID for easier management.
 
 ---
 
-## 🛠️ Prerequisites
+## ⌨️ Usage
 
-This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure
-(`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
+The script defaults to **Test Mode (Dry Run)** for safety. Use the `-f` flag to enable actual file movement.
 
+### Command Line Options
 
-
-3.  **Run:** Execute the script from the command line:
-
-<!-- end list -->
-
-
------
-
-## 💡 Usage
-
-The script requires you to explicitly select either **Automatic** or **Interactive** mode using 
-the `-a` or `-I` flag. If no mode is supplied,  it will prompt you for selection.
-
-### Mode Selection
-
-| Flag | Mode | Description |
+| Option | Description | Mode |
 | :--- | :--- | :--- |
-| `-a` | **Automatic** | Scans all sub-folders within the selected share, calculates the optimal target disk for each, and generates a plan. |
-| `-I` | **Interactive** | Allows you to manually select the base share, the specific fragmented sub-folder, and the exact destination disk. |
+| `-h` | Display the usage information. | Both |
+| `-t` | **Test Mode (Dry Run).** This is the **default**. No files will be moved. | Both |
+| `-f` | **Force Execution.** Overrides test mode, and files **will be moved**. | Both |
+| `-v` | Increase verbosity (recommended for Auto Mode planning). | Both |
+| `-a` | **FULL AUTOMATIC PLANNING MODE.** Scans all folders, generates an optimized plan, and executes (if `-f` is also used). | Auto |
+| `-I` | **INTERACTIVE MODE.** Prompts you to select a specific folder and destination disk. | Interactive |
 
-### Options
+### 1. Interactive Mode Example
 
-| Flag | Name | Default | Applies to | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `-h` | Help | N/A | Both | Display the usage information and exit. |
-| `-t` | Test Run | `true` | Both | **(Default)** Only generates the plan/reports the move. No files are moved. |
-| `-f` | Force Execute | `false` | Both | **Overrides** the test run. Files **WILL** be moved and deleted from original locations. |
-| `-v` | Verbose | `1` | Both | Increases detail, useful for troubleshooting the planning logic in Auto Mode. |
+Use this mode for granular control over one specific folder.
 
-#### Example (Automatic Dry Run)
+```bash
+# Run in Interactive Mode and Dry Run (Default)
+./consld8-auto.sh -I
 
-Run the automatic planner and review the proposed moves without risk:
+# Run in Interactive Mode and EXECUTE the move
+./consld8-auto.sh -I -f
 
-
-./consld8.sh -a
-
-#### Example (Interactive Force Run)
-
-Select a specific share and folder, then execute the move immediately:
-
-
-./consld8.sh -I -f
-
------
-
-## 🧠 Automatic Mode Logic
-
-The automatic planner uses a prioritized system to choose the best destination disk for consolidating a
-fragmented folder:
-
-1.  **Safety Check (Must Pass):** The proposed move must ensure the target disk's final free space is greater
-than the configured **Safety Margin**
-2.  (`MIN_FREE_SPACE_KB`). Disks failing this are ignored.
-    **Primary Metric (Maximize existing data):** Among all safe disks, the script selects the disk that
-    **already contains the highest number of
-   files** belonging to the folder being consolidated. This minimizes the I/O operations required.
-5.  **Secondary Metric (Tie-breaker):** If multiple disks tie for the highest file count, the script chooses
-the one with the **most free space**.
-
------
-
-## ⚙️ Configuration
-
-You can easily adjust the script's default behavior by editing the constants at the top of the `consld8.sh` file.
-
-| Constant | Default Value | Description |
-| :--- | :--- | :--- |
-| `BASE_SHARE` | `"/mnt/user/TVSHOWS"` | The default starting user share path if one is not manually selected. |
-| `MIN_FREE_SPACE_KB` | `209715200` | The required minimum free space after consolidation, specified 
-in **1K blocks** (200 GB). This value can also be set interactively during the automatic run. |
-
-
-
-### Support the Project
-
-If this script helps you keep your unRAID array tidy, please consider supporting its development!
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=000000)](https://buymeacoffee.com/yourditchdoc)
