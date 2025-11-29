@@ -51,7 +51,7 @@ and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfm
 2.  **Make Executable:** Set the execution permission:
 
 ```bash
-chmod +x /boot/config/scripts/consld8.sh
+chmod +x /consld8.sh
 ## 📦 `consld8.sh`: UnRAID Share Consolidation Script
 
 A powerful Bash script for unRAID systems designed to automatically or interactively consolidate fragmented user shares (sub-folders) onto a single
@@ -90,7 +90,7 @@ and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfm
 
 ## 🚀 Installation
 
-1.  **Save the Script:** Save the script content to a file named `consld8.sh` on your unRAID server (e.g., in `/boot/config/scripts/`).
+1.  **Save the Script:** Save the script content to a file named `consld8.sh` on your unRAID server (e.g., in `/mnt/user/cache`).
 2.  **Make Executable:** Set the execution permission:
 
 ```bash
@@ -102,7 +102,7 @@ chmod +x consld8.sh
 <!-- end list -->
 
 ```bash
-/consld8.sh
+./consld8.sh
 ```
 
 -----
