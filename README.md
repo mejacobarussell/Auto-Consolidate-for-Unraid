@@ -99,25 +99,12 @@ completion.
 This script is designed to run directly on an **unRAID** server, as it relies on the specific disk mounting structure
 (`/mnt/diskX`, `/mnt/cache`) and standard Linux/unRAID utilities (`bash`, `du`, `df`, `find`, `rsync`, `numfmt`).
 
----
-
-## 🚀 Installation
-
-1.  **Save the Script:** Save the script content to a file named `consld8.sh` on your unRAID server
-(e.g., in `/mnt/user/cache`).
-2.  **Make Executable:** Set the execution permission:
-
-```bash
-chmod +x consld8.sh
 ````
 
 3.  **Run:** Execute the script from the command line:
 
 <!-- end list -->
 
-```bash
-./consld8.sh
-```
 
 -----
 
