@@ -2,9 +2,9 @@
 
 This script was inspired and basedon the original unRAID diskmv script, it is HEAVLY modified from the original diskmv script by trinapicot.
 See: https://github.com/trinapicot/unraid-diskmv
-!
 
-[image](https://github.com/user-attachments/assets/41a58589-8e80-4f71-a893-6ae02331162d)
+
+![image](https://github.com/user-attachments/assets/41a58589-8e80-4f71-a893-6ae02331162d)
 
 
 ````markdown
