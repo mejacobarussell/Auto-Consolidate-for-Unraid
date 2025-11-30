@@ -38,14 +38,12 @@
 <file dest="/usr/local/emhttp/plugins/disk_consolidator"/>
 </remove>
 
-<!-- FIX: POST_INSTALL HOOK ADDED -->
-
-<!-- This hook restarts the web server (emhttpd) to ensure the new icon and menu links are registered immediately -->
+<!-- FIX: POST_INSTALL HOOK UPDATED to use sleep and background process to allow the installation lock to release -->
 
 <hook event="post_install">
 <if_true>
-<shell_cmd>logger "Disk Consolidator: Forcing emhttpd restart to load plugin menu"</shell_cmd>
-<shell_cmd>/usr/local/sbin/emhttpd restart</shell_cmd>
+<shell_cmd>logger "Disk Consolidator: Restarting emhttpd in background to ensure menu load"</shell_cmd>
+<shell_cmd>(sleep 5; /usr/local/sbin/emhttpd restart) &</shell_cmd>
 </if_true>
 </hook>
 
