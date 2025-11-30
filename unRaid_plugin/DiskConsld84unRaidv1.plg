@@ -3,7 +3,8 @@
 <plugin>
 <id>DiskConsolidator</id>
 <name>Disk Consolidator (consld8)</name>
-<version>1.0.3</version>
+<!-- UPDATED VERSION TO 1.0.4 TO FORCE REDOWNLOAD -->
+<version>1.0.4</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
@@ -35,7 +36,11 @@
 
 <!-- REMOVED <menu> block to focus on the essential <page> link -->
 
-<!-- FIX: POST_INSTALL HOOK UPDATED to use sleep and background process to allow the installation lock to release. Removed logger line. -->
+<remove>
+<file dest="/usr/local/emhttp/plugins/disk_consolidator"/>
+</remove>
+
+<!-- FIX: POST_INSTALL HOOK UPDATED to use sleep and background process to allow the installation lock to release. -->
 
 <hook event="post_install">
 <if_true>
