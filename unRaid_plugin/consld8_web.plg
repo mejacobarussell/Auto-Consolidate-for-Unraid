@@ -4,12 +4,14 @@
 <!-- CHANGED ID to ConsolidatorTool to isolate from any cache issues -->
 <id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
-<version>1.0.5</version>
+<version>1.0.6</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
 <minSystem>6.0.0</minSystem>
+<!-- Added maxSystem tag for completeness -->
+<maxSystem>7.0.0</maxSystem>
 
 <!-- Icon path matches the new ID folder: /usr/local/emhttp/plugins/ConsolidatorTool/ -->
 
@@ -19,10 +21,10 @@
 </plugin_dialog>
 
 <copy>
-<!-- All file destinations updated to the new plugin folder -->
-<file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8_web.sh" mode="0777"/>
-<file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8-1.0.3.sh" mode="0777"/>
-<file src="Consld8.png" dest="/usr/local/emhttp/plugins/ConsolidatorTool/icon.png" mode="0777"/>
+<!-- All file destinations updated to the new plugin folder. Permissions set to standard 0755 for executables. -->
+<file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8_web.sh" mode="0755"/>
+<file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8-1.0.3.sh" mode="0755"/>
+<file src="Consld8.png" dest="/usr/local/emhttp/plugins/ConsolidatorTool/icon.png" mode="0644"/> <!-- Icon is a file, requires 0644 -->
 </copy>
 
 <page>
@@ -37,11 +39,11 @@
 <file dest="/usr/local/emhttp/plugins/ConsolidatorTool"/>
 </remove>
 
-<!-- Hook to restart emhttpd after a delay to clear menu cache and release the installer lock -->
+<!-- CRITICAL FIX: Ampersand (&) replaced with &amp; to prevent XML parsing error. -->
 
 <hook event="post_install">
 <if_true>
-<shell_cmd>(sleep 5; /usr/local/sbin/emhttpd restart)&</shell_cmd>
+<shell_cmd>(sleep 5; /usr/local/sbin/emhttpd restart)&amp;</shell_cmd>
 </if_true>
 </hook>
 
