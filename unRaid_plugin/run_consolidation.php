@@ -2,7 +2,7 @@
 
 // --- Configuration ---
 // Path to your bash script
-$scriptPath = '/path/to/your/consld8-1.0.3.sh';
+$scriptPath = '/mnt/user/appdata/consld8-1.0.3.sh';
 
 // Directory to store the script output/log. Make sure this is writable by the web server user.
 // Using /tmp/ is generally safe, but you might want to adjust this for Unraid logs.
