@@ -5,7 +5,7 @@
 
 <!ENTITY author "Jacob Russell">
 
-<!ENTITY version "1.1.5">
+<!ENTITY version "1.1.6">
 
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 
@@ -15,13 +15,18 @@
 
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" category="Tools" min="6.0.0" max="7.0.0">
+<PLUGIN name="&name;" author="&author;" version="&version;" category="Tools" min="6.0.0" max="8.0.0">
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
 
 <!-- Icon path uses the DTD entity for cleanliness -->
 
 <icon>&plugdir;/icon.png</icon>
+
+<!-- FIX: Updated maxSystem version to 8.0.0 for broader compatibility -->
+
+<minSystem>6.0.0</minSystem>
+<maxSystem>8.0.0</maxSystem>
 
 <plugin_dialog title="&label; Installation" yes="Done" no="No" window_content='The &label; has been successfully installed. You can find it under the Plugins menu. Please restart the Unraid WebUI to see the menu entry immediately.'>
 </plugin_dialog>
@@ -30,23 +35,25 @@
 
 <FILE Run="/bin/bash" Method="install">
 <INLINE>
-# 1. Verbose message for screen and log
+
+1. Verbose message for screen and log
+
 echo '--- Disk Consolidator Installation Start (v&version;) ---'
 logger 'Disk Consolidator: Starting installation (v&version;). Executing pre-install hook.'
 
-    # 2. Explicitly create the plugin directory (CRITICAL STEP)
-    echo 'Creating destination directory: &plugdir;'
-    mkdir -p &plugdir;
+2. Explicitly create the plugin directory (CRITICAL STEP)
 
-    # 3. Check for success and log
-    if [ $? -eq 0 ]; then
-        logger 'Disk Consolidator: Directory created successfully.'
-    else
-        logger 'Disk Consolidator: ERROR creating directory!'
-    fi
+echo 'Creating destination directory: &plugdir;'
+mkdir -p &plugdir;
+
+3. Check for success and log
+
+if [ $? -eq 0 ]; then
+logger 'Disk Consolidator: Directory created successfully.'
+else
+logger 'Disk Consolidator: ERROR creating directory!'
+fi
 </INLINE>
-
-
 </FILE>
 
 <copy>
