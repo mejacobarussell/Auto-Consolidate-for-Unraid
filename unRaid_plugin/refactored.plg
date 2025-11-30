@@ -5,7 +5,7 @@
 
 <!ENTITY author "Jacob Russell">
 
-<!ENTITY version "1.1.6">
+<!ENTITY version "1.1.7">
 
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 
@@ -23,7 +23,7 @@
 
 <icon>&plugdir;/icon.png</icon>
 
-<!-- FIX: Updated maxSystem version to 8.0.0 for broader compatibility -->
+<!-- Version requirements for Unraid OS -->
 
 <minSystem>6.0.0</minSystem>
 <maxSystem>8.0.0</maxSystem>
@@ -31,7 +31,7 @@
 <plugin_dialog title="&label; Installation" yes="Done" no="No" window_content='The &label; has been successfully installed. You can find it under the Plugins menu. Please restart the Unraid WebUI to see the menu entry immediately.'>
 </plugin_dialog>
 
-<!-- PRE-INSTALL HOOK: Using FILE/INLINE for robust shell execution to guarantee directory creation -->
+<!-- PRE-INSTALL HOOK: Using INLINE and robust shell logic (&& / ||) to GUARANTEE directory creation -->
 
 <FILE Run="/bin/bash" Method="install">
 <INLINE>
@@ -43,15 +43,18 @@ logger 'Disk Consolidator: Starting installation (v&version;). Executing pre-ins
 
 2. Explicitly create the plugin directory (CRITICAL STEP)
 
-echo 'Creating destination directory: &plugdir;'
-mkdir -p &plugdir;
+echo 'Attempting to create destination directory: &plugdir;'
 
-3. Check for success and log
+Use shell short-circuiting (&& / ||) for robust exit code checking
 
-if [ $? -eq 0 ]; then
-logger 'Disk Consolidator: Directory created successfully.'
+mkdir -p &plugdir; && logger 'Disk Consolidator: Directory created successfully.' || logger 'Disk Consolidator: CRITICAL ERROR creating directory!'
+
+3. Log directory creation outcome to screen
+
+if [ -d "&plugdir;" ]; then
+echo 'Directory creation SUCCESS. Continuing to file copy.'
 else
-logger 'Disk Consolidator: ERROR creating directory!'
+echo 'Directory creation FAILURE. Installation will abort.'
 fi
 </INLINE>
 </FILE>
