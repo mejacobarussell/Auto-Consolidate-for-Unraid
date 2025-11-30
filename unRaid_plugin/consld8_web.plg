@@ -4,7 +4,7 @@
 <!-- ID is ConsolidatorTool -->
 <id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
-<version>1.0.9</version>
+<version>1.1.0</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
@@ -18,6 +18,14 @@
 
 <plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu. Please restart the Unraid WebUI to see the menu entry immediately.'>
 </plugin_dialog>
+
+<!-- NEW: Pre-install hook to ensure the destination directory is created before the copy operation -->
+
+<hook event="pre_install">
+<if_true>
+<shell_cmd>mkdir -p /usr/local/emhttp/plugins/ConsolidatorTool</shell_cmd>
+</if_true>
+</hook>
 
 <copy>
 <!-- All file destinations updated to the new plugin folder. -->
