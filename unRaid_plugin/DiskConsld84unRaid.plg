@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <plugin>
-<!-- 1. UPDATED: ID should be unique, using the concept name -->
 <id>DiskConsolidator</id>
 <name>Disk Consolidator (consld8)</name>
 <version>1.0.3</version>
@@ -11,14 +10,16 @@
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
 <minSystem>6.10.0</minSystem>
 
-<!-- 2. NO CHANGE: The <copy> block still uses relative paths (src) for the scripts -->
+<!-- The <icon> path remains /plugins/disk_consolidator/icon.png because it's a standard/safe path -->
+
+<icon>/plugins/disk_consolidator/icon.png</icon>
 
 <copy>
 <file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8_web.sh" mode="0777"/>
 <file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8-1.0.3.sh" mode="0777"/>
+<!-- UPDATED: Source file name is now Consld8.png -->
+<file src="Consld8.png" dest="/usr/local/emhttp/plugins/disk_consolidator/icon.png" mode="0644"/>
 </copy>
-
-<!-- 3. NO CHANGE: The URL path remains correct as it points to the execution script in the plugin folder -->
 
 <page>
 <id>consolidatorsettings</id>
@@ -26,7 +27,11 @@
 <url>/plugins/disk_consolidator/consld8_web.sh</url>
 </page>
 
-<!-- 4. NO CHANGE: Removal remains the same -->
+<menu>
+<name>Disk Consolidator</name>
+<parent>Settings</parent>
+<url>/plugins/disk_consolidator/consld8_web.sh</url>
+</menu>
 
 <remove>
 <file dest="/usr/local/emhttp/plugins/disk_consolidator"/>
