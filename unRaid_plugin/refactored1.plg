@@ -15,7 +15,7 @@
 
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" category="Tools" min="6.0.0" max="8.0.0">
+<PLUGIN name="&name;" author="&author;" version="&version;" category="Tools">
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
 
