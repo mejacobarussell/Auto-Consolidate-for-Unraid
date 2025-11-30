@@ -6,7 +6,7 @@
 <version>1.0.3</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
-<author>Your Name</author>
+<author>Jacob Russell</author>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
 <minSystem>6.10.0</minSystem>
 
@@ -14,11 +14,16 @@
 
 <icon>/plugins/disk_consolidator/icon.png</icon>
 
+<!-- Add a dialog element for a smoother installation feedback -->
+
+<plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu or the Settings menu.'>
+</plugin_dialog>
+
 <copy>
 <file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8_web.sh" mode="0777"/>
 <file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8-1.0.3.sh" mode="0777"/>
-<!-- UPDATED: Source file name is now Consld8.png -->
-<file src="Consld8.png" dest="/usr/local/emhttp/plugins/disk_consolidator/icon.png" mode="0644"/>
+<!-- Set to 0777 temporarily to rule out permission issues on the icon -->
+<file src="Consld8.png" dest="/usr/local/emhttp/plugins/disk_consolidator/icon.png" mode="0777"/>
 </copy>
 
 <page>
@@ -36,5 +41,16 @@
 <remove>
 <file dest="/usr/local/emhttp/plugins/disk_consolidator"/>
 </remove>
+
+<!-- FIX: POST_INSTALL HOOK ADDED -->
+
+<!-- This hook restarts the web server (emhttpd) to ensure the new icon and menu links are registered immediately -->
+
+<hook event="post_install">
+<if_true>
+<shell_cmd>logger "Disk Consolidator: Forcing emhttpd restart to load plugin menu"</shell_cmd>
+<shell_cmd>/usr/local/sbin/emhttpd restart</shell_cmd>
+</if_true>
+</hook>
 
 </plugin>
