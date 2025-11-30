@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PLUGIN name="diskconsld8r" author="Jacob Russell" version="1.0" launch="consld8.php">
+  <CHANGES>
+    ### 1.0 ###
+    * Initial release by Jacob Russell.
+  </CHANGES>
+  
+  <!--
+    IMPORTANT: You must replace 'github.com...' with the
+    RAW link to the root directory of your plugin files.
+  -->
+  <FILE Name="/tmp/variables.sh" Run="/bin/bash">
+    <INLINE>
+      #!/bin/bash
+      export GITURL="github.comyourusername/yourreponame/raw/master"
+    </INLINE>
+  </FILE>
+
+  <!-- Download and place the main GUI file (consld8.php) -->
+  <FILE Name="/usr/local/emhttp/plugins/&name;/consld8.php">
+    <URL>&GITURL;/consld8.php</URL>
+  </FILE>
+
+  <!--
+    ADD ADDITIONAL <FILE> TAGS HERE FOR ANY OTHER FILES YOU HAVE,
+    E.G., ICONS, SCRIPTS, CSS FILES, ETC.
+    Example:
+    <FILE Name="/usr/local/emhttp/plugins/&name;/icon.png">
+      <URL>&GITURL;/icon.png</URL>
+    </FILE>
+  -->
+  
+  <!-- Run initial installation scripts inline -->
+  <FILE Run="/bin/bash" Method="install">
+    <INLINE>
+      <![CDATA[
+      # Ensure the plugin's config directory exists on the boot flash drive
+      mkdir -p /boot/config/plugins/&name;
+      echo "Installation of &name; complete."
+      ]]>
+    </INLINE>
+  </FILE>
+</PLUGIN>
