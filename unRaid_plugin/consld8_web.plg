@@ -4,7 +4,7 @@
 <!-- ID is ConsolidatorTool -->
 <id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
-<version>1.1.0</version>
+<version>1.1.1</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
@@ -46,6 +46,12 @@
 <file dest="/usr/local/emhttp/plugins/ConsolidatorTool"/>
 </remove>
 
-<!-- POST_INSTALL HOOK REMOVED: Eliminating the complex shell command to ensure file copy succeeds without crashing the installer. -->
+<!-- RE-INTRODUCED POST_INSTALL HOOK: Now using 'logger' to write a message to the system log. -->
+
+<hook event="post_install">
+<if_true>
+<shell_cmd>logger "Disk Consolidator (ConsolidatorTool) plugin version 1.1.1 installed successfully."</shell_cmd>
+</if_true>
+</hook>
 
 </plugin>
