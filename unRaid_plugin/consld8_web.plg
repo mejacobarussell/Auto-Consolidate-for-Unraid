@@ -4,7 +4,7 @@
 <!-- ID is ConsolidatorTool -->
 <id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
-<version>1.1.1</version>
+<version>1.1.2</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
@@ -19,11 +19,11 @@
 <plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu. Please restart the Unraid WebUI to see the menu entry immediately.'>
 </plugin_dialog>
 
-<!-- NEW: Pre-install hook to ensure the destination directory is created before the copy operation -->
+<!-- NEW: Pre-install hook updated for verbose logging of directory creation -->
 
 <hook event="pre_install">
 <if_true>
-<shell_cmd>mkdir -p /usr/local/emhttp/plugins/ConsolidatorTool</shell_cmd>
+<shell_cmd>logger "Disk Consolidator: Creating destination directory /usr/local/emhttp/plugins/ConsolidatorTool."; mkdir -p /usr/local/emhttp/plugins/ConsolidatorTool</shell_cmd>
 </if_true>
 </hook>
 
@@ -46,11 +46,11 @@
 <file dest="/usr/local/emhttp/plugins/ConsolidatorTool"/>
 </remove>
 
-<!-- RE-INTRODUCED POST_INSTALL HOOK: Now using 'logger' to write a message to the system log. -->
+<!-- POST_INSTALL HOOK: Updated for verbose logging of copy completion and finalization. -->
 
 <hook event="post_install">
 <if_true>
-<shell_cmd>logger "Disk Consolidator (ConsolidatorTool) plugin version 1.1.1 installed successfully."</shell_cmd>
+<shell_cmd>logger "Disk Consolidator: File copy complete. Plugin version 1.1.2 installed successfully. Restart WebUI to finalize."</shell_cmd>
 </if_true>
 </hook>
 
