@@ -8,7 +8,8 @@
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
-<minSystem>6.10.0</minSystem>
+<!-- FIX: Lowered minSystem version to ensure broad compatibility and prevent hidden plugin issue -->
+<minSystem>6.0.0</minSystem>
 
 <!-- The <icon> path remains /plugins/disk_consolidator/icon.png because it's a standard/safe path -->
 
