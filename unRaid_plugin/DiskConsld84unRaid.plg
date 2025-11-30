@@ -8,7 +8,7 @@
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
-<!-- FIX: Lowered minSystem version to ensure broad compatibility and prevent hidden plugin issue -->
+<!-- Lowered minSystem version to ensure broad compatibility and prevent hidden plugin issue -->
 <minSystem>6.0.0</minSystem>
 
 <!-- The <icon> path remains /plugins/disk_consolidator/icon.png because it's a standard/safe path -->
@@ -39,11 +39,10 @@
 <file dest="/usr/local/emhttp/plugins/disk_consolidator"/>
 </remove>
 
-<!-- FIX: POST_INSTALL HOOK UPDATED to use sleep and background process to allow the installation lock to release -->
+<!-- FIX: POST_INSTALL HOOK UPDATED to use sleep and background process to allow the installation lock to release. Removed logger line. -->
 
 <hook event="post_install">
 <if_true>
-<shell_cmd>logger "Disk Consolidator: Restarting emhttpd in background to ensure menu load"</shell_cmd>
 <shell_cmd>(sleep 5; /usr/local/sbin/emhttpd restart) &</shell_cmd>
 </if_true>
 </hook>
