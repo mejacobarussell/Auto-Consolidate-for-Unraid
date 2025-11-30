@@ -4,7 +4,7 @@
 <!-- CHANGED ID to ConsolidatorTool to isolate from any cache issues -->
 <id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
-<version>1.0.6</version>
+<version>1.0.7</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
@@ -39,11 +39,11 @@
 <file dest="/usr/local/emhttp/plugins/ConsolidatorTool"/>
 </remove>
 
-<!-- CRITICAL FIX: Ampersand (&) replaced with &amp; to prevent XML parsing error. -->
+<!-- DEFINITIVE FIX: Using CDATA to guarantee the literal '&' is passed without breaking XML structure. -->
 
 <hook event="post_install">
 <if_true>
-<shell_cmd>(sleep 5; /usr/local/sbin/emhttpd restart)&amp;</shell_cmd>
+<shell_cmd><![CDATA[(sleep 5; /usr/local/sbin/emhttpd restart)&]]></shell_cmd>
 </if_true>
 </hook>
 
