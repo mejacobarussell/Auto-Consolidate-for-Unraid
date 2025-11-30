@@ -1,30 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <plugin>
-<!-- CHANGED ID to ConsolidatorTool to isolate from any cache issues -->
+<!-- ID is ConsolidatorTool -->
 <id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
-<version>1.0.7</version>
+<version>1.0.9</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
 <minSystem>6.0.0</minSystem>
-<!-- Added maxSystem tag for completeness -->
 <maxSystem>7.0.0</maxSystem>
 
-<!-- Icon path matches the new ID folder: /usr/local/emhttp/plugins/ConsolidatorTool/ -->
+<!-- Icon path matches the new ID folder and the renamed file: /plugins/ConsolidatorTool/icon.png -->
 
 <icon>/plugins/ConsolidatorTool/icon.png</icon>
 
-<plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu.'>
+<plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu. Please restart the Unraid WebUI to see the menu entry immediately.'>
 </plugin_dialog>
 
 <copy>
-<!-- All file destinations updated to the new plugin folder. Permissions set to standard 0755 for executables. -->
+<!-- All file destinations updated to the new plugin folder. -->
 <file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8_web.sh" mode="0755"/>
 <file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8-1.0.3.sh" mode="0755"/>
-<file src="Consld8.png" dest="/usr/local/emhttp/plugins/ConsolidatorTool/icon.png" mode="0644"/> <!-- Icon is a file, requires 0644 -->
+<!-- Copies Consld8.png and renames it to icon.png in the destination folder -->
+<file src="Consld8.png" dest="/usr/local/emhttp/plugins/ConsolidatorTool/icon.png" mode="0644"/>
 </copy>
 
 <page>
@@ -35,16 +35,9 @@
 </page>
 
 <remove>
-<!-- Updated removal path -->
 <file dest="/usr/local/emhttp/plugins/ConsolidatorTool"/>
 </remove>
 
-<!-- DEFINITIVE FIX: Using CDATA to guarantee the literal '&' is passed without breaking XML structure. -->
-
-<hook event="post_install">
-<if_true>
-<shell_cmd><![CDATA[(sleep 5; /usr/local/sbin/emhttpd restart)&]]></shell_cmd>
-</if_true>
-</hook>
+<!-- POST_INSTALL HOOK REMOVED: Eliminating the complex shell command to ensure file copy succeeds without crashing the installer. -->
 
 </plugin>
