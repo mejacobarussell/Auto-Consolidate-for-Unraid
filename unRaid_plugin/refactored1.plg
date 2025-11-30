@@ -1,7 +1,6 @@
 <?xml version="1.0" standalone="yes"?>
 
-<!DOCTYPE PLUGIN [
-<!ENTITY name "ConsolidatorTool">
+<!DOCTYPE PLUGIN [<!ENTITY name "ConsolidatorTool">
 
 <!ENTITY author "Jacob Russell">
 
