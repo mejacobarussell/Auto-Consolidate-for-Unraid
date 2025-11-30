@@ -1,4 +1,5 @@
 # Auto-Consolidate-for-Unraid
+This script is used to Fix user share sub-folders that have been spread accross multiple disks to one disk.
 
 This script was inspired and basedon the original unRAID diskmv script, it is HEAVLY modified from the original
 diskmv script by trinapicot.
