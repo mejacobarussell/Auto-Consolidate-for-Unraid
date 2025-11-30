@@ -5,7 +5,7 @@
 
 <!ENTITY author "Jacob Russell">
 
-<!ENTITY version "1.2.0">
+<!ENTITY version "1.2.1">
 
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 
@@ -31,7 +31,7 @@
 <plugin_dialog title="&label; Installation" yes="Done" no="No" window_content='The &label; has been successfully installed. You can find it under the Plugins menu. Please restart the Unraid WebUI to see the menu entry immediately.'>
 </plugin_dialog>
 
-<!-- PRE-INSTALL HOOK: Using INLINE and robust shell logic (&& / ||) to GUARANTEE directory creation -->
+<!-- PRE-INSTALL HOOK: Using INLINE for guaranteed directory creation -->
 
 <FILE Run="/bin/bash" Method="install">
 <INLINE>
@@ -51,11 +51,7 @@ mkdir -p &plugdir; && logger 'Disk Consolidator: Directory created successfully.
 
 3. Log directory creation outcome to screen
 
-CRITICAL FIX: The final remaining backslashes (
-
-$$and$$
-
-) are removed from the if statement to allow the bash script to execute cleanly.
+CRITICAL FIXES: Removed backslashes from DTD and the IF statement (if [ -d...]) to ensure clean XML parsing and successful bash execution.
 
 if [ -d "&plugdir;" ]; then
 echo 'Directory creation SUCCESS. Continuing to file copy.'
