@@ -5,7 +5,7 @@
 
 <!ENTITY author "Jacob Russell">
 
-<!ENTITY version "1.1.8">
+<!ENTITY version "1.1.9">
 
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 
@@ -51,7 +51,7 @@ mkdir -p &plugdir; && logger 'Disk Consolidator: Directory created successfully.
 
 3. Log directory creation outcome to screen
 
-FIX: Removed fragile backslashes from the if statement to prevent script parsing failure.
+FIX: FINAL CORRECTION - Removed fragile backslashes from the if statement to prevent script parsing failure.
 
 if [ -d "&plugdir;" ]; then
 echo 'Directory creation SUCCESS. Continuing to file copy.'
