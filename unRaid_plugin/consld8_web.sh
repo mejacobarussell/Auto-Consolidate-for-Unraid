@@ -7,8 +7,8 @@
 <version>1.0.3</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
-<author>Your Name</author>
-<website>https://www.google.com/search?q=https://yourwebsite.com</website>
+<author>Jacob Russell</author>
+<website>buy me a coffee link</website>
 <minSystem>6.10.0</minSystem>
 
 <!-- 2. NO CHANGE: The <copy> block still uses relative paths (src) for the scripts -->
