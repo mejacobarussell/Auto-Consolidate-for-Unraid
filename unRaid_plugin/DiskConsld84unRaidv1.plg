@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <plugin>
-<!-- CHANGED ID TO ISOLATE FROM ANY CACHE/CORRUPTION -->
+<!-- CHANGED ID to ConsolidatorTool to isolate from any cache issues -->
 <id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
 <version>1.0.5</version>
@@ -11,7 +11,7 @@
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
 <minSystem>6.0.0</minSystem>
 
-<!-- UPDATED ICON PATH TO MATCH NEW ID -->
+<!-- Icon path matches the new ID folder: /usr/local/emhttp/plugins/ConsolidatorTool/ -->
 
 <icon>/plugins/ConsolidatorTool/icon.png</icon>
 
@@ -19,24 +19,25 @@
 </plugin_dialog>
 
 <copy>
-<!-- UPDATED DESTINATION PATHS TO MATCH NEW ID -->
+<!-- All file destinations updated to the new plugin folder -->
 <file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8_web.sh" mode="0777"/>
 <file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8-1.0.3.sh" mode="0777"/>
 <file src="Consld8.png" dest="/usr/local/emhttp/plugins/ConsolidatorTool/icon.png" mode="0777"/>
 </copy>
 
 <page>
-<!-- CHANGED PAGE ID -->
 <id>consolidationtoolsettings</id>
 <label>Disk Consolidator</label>
-<!-- UPDATED URL TO MATCH NEW ID -->
+<!-- WebUI URL updated to match the new plugin folder -->
 <url>/plugins/ConsolidatorTool/consld8_web.sh</url>
 </page>
 
 <remove>
-<!-- UPDATED REMOVE PATH TO MATCH NEW ID -->
+<!-- Updated removal path -->
 <file dest="/usr/local/emhttp/plugins/ConsolidatorTool"/>
 </remove>
+
+<!-- Hook to restart emhttpd after a delay to clear menu cache and release the installer lock -->
 
 <hook event="post_install">
 <if_true>
