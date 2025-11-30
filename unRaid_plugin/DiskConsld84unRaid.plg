@@ -13,7 +13,10 @@
 
 <!-- 2. NO CHANGE: The <copy> block still uses relative paths (src) for the scripts -->
 
-<copy> <file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8_web.sh" mode="0777"/> <file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8-1.0.3.sh" mode="0777"/> </copy>
+<copy>
+<file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8_web.sh" mode="0777"/>
+<file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8-1.0.3.sh" mode="0777"/>
+</copy>
 
 <!-- 3. NO CHANGE: The URL path remains correct as it points to the execution script in the plugin folder -->
 
