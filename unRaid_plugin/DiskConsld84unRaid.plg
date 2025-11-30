@@ -20,10 +20,10 @@
 </plugin_dialog>
 
 <copy>
-<file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8_web.sh" mode="0777"/>
-<file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8-1.0.3.sh" mode="0777"/>
+<file src="https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/unRaid_plugin/consld8_web.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8_web.sh" mode="0777"/>
+<file src="https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/unRaid_plugin/consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8-1.0.3.sh" mode="0777"/>
 <!-- Set to 0777 temporarily to rule out permission issues on the icon -->
-<file src="Consld8.png" dest="/usr/local/emhttp/plugins/disk_consolidator/icon.png" mode="0777"/>
+<file src="https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/unRaid_plugin/Consld8.png" dest="/usr/local/emhttp/plugins/disk_consolidator/icon.png" mode="0777"/>
 </copy>
 
 <page>
