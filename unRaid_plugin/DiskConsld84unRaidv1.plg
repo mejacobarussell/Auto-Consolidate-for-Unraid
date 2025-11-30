@@ -1,46 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <plugin>
-<id>DiskConsolidator</id>
+<!-- CHANGED ID TO ISOLATE FROM ANY CACHE/CORRUPTION -->
+<id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
-<!-- UPDATED VERSION TO 1.0.4 TO FORCE REDOWNLOAD -->
-<version>1.0.4</version>
+<version>1.0.5</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
-<!-- Lowered minSystem version to ensure broad compatibility and prevent hidden plugin issue -->
 <minSystem>6.0.0</minSystem>
 
-<!-- The <icon> path remains /plugins/disk_consolidator/icon.png because it's a standard/safe path -->
+<!-- UPDATED ICON PATH TO MATCH NEW ID -->
 
-<icon>/plugins/disk_consolidator/icon.png</icon>
-
-<!-- Add a dialog element for a smoother installation feedback -->
+<icon>/plugins/ConsolidatorTool/icon.png</icon>
 
 <plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu.'>
 </plugin_dialog>
 
 <copy>
-<file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8_web.sh" mode="0777"/>
-<file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/disk_consolidator/consld8-1.0.3.sh" mode="0777"/>
-<!-- Set to 0777 temporarily to rule out permission issues on the icon -->
-<file src="Consld8.png" dest="/usr/local/emhttp/plugins/disk_consolidator/icon.png" mode="0777"/>
+<!-- UPDATED DESTINATION PATHS TO MATCH NEW ID -->
+<file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8_web.sh" mode="0777"/>
+<file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8-1.0.3.sh" mode="0777"/>
+<file src="Consld8.png" dest="/usr/local/emhttp/plugins/ConsolidatorTool/icon.png" mode="0777"/>
 </copy>
 
 <page>
-<id>consolidatorsettings</id>
+<!-- CHANGED PAGE ID -->
+<id>consolidationtoolsettings</id>
 <label>Disk Consolidator</label>
-<url>/plugins/disk_consolidator/consld8_web.sh</url>
+<!-- UPDATED URL TO MATCH NEW ID -->
+<url>/plugins/ConsolidatorTool/consld8_web.sh</url>
 </page>
 
-<!-- REMOVED <menu> block to focus on the essential <page> link -->
-
 <remove>
-<file dest="/usr/local/emhttp/plugins/disk_consolidator"/>
+<!-- UPDATED REMOVE PATH TO MATCH NEW ID -->
+<file dest="/usr/local/emhttp/plugins/ConsolidatorTool"/>
 </remove>
-
-<!-- FIX: POST_INSTALL HOOK UPDATED to use sleep and background process to allow the installation lock to release. -->
 
 <hook event="post_install">
 <if_true>
