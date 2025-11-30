@@ -41,7 +41,7 @@
 
 <hook event="post_install">
 <if_true>
-<shell_cmd>(sleep 5; /usr/local/sbin/emhttpd restart) &</shell_cmd>
+<shell_cmd>(sleep 5; /usr/local/sbin/emhttpd restart)&</shell_cmd>
 </if_true>
 </hook>
 
