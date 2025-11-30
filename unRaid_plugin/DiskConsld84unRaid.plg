@@ -16,7 +16,7 @@
 
 <!-- Add a dialog element for a smoother installation feedback -->
 
-<plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu or the Settings menu.'>
+<plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu.'>
 </plugin_dialog>
 
 <copy>
@@ -32,11 +32,7 @@
 <url>/plugins/disk_consolidator/consld8_web.sh</url>
 </page>
 
-<menu>
-<name>Disk Consolidator</name>
-<parent>Settings</parent>
-<url>/plugins/disk_consolidator/consld8_web.sh</url>
-</menu>
+<!-- REMOVED <menu> block to focus on the essential <page> link -->
 
 <remove>
 <file dest="/usr/local/emhttp/plugins/disk_consolidator"/>
