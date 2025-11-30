@@ -27,13 +27,7 @@
 </if_true>
 </hook>
 
-<copy>
-<!-- All file destinations updated to the new plugin folder. -->
-<file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8_web.sh" mode="0755"/>
-<file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8-1.0.3.sh" mode="0755"/>
-<!-- Copies Consld8.png and renames it to icon.png in the destination folder -->
-<file src="Consld8.png" dest="/usr/local/emhttp/plugins/ConsolidatorTool/icon.png" mode="0644"/>
-</copy>
+<copy> <!-- All file destinations updated to the new plugin folder. --> <file src="consld8_web.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8_web.sh" mode="0755"/> <file src="consld8-1.0.3.sh" dest="/usr/local/emhttp/plugins/ConsolidatorTool/consld8-1.0.3.sh" mode="0755"/> <!-- Copies Consld8.png and renames it to icon.png in the destination folder --> <file src="Consld8.png" dest="/usr/local/emhttp/plugins/ConsolidatorTool/icon.png" mode="0644"/> </copy>
 
 <page>
 <id>consolidationtoolsettings</id>
