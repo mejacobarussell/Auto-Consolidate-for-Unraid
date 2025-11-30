@@ -1,10 +1,11 @@
 <?xml version="1.0" standalone="yes"?>
 
-<!DOCTYPE PLUGIN [<!ENTITY name "ConsolidatorTool">
+<!DOCTYPE PLUGIN [
+<!ENTITY name "ConsolidatorTool">
 
 <!ENTITY author "Jacob Russell">
 
-<!ENTITY version "1.1.7">
+<!ENTITY version "1.1.8">
 
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 
@@ -14,7 +15,7 @@
 
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" category="Tools">
+<PLUGIN name="&name;" author="&author;" version="&version;" category="Tools" min="6.0.0" max="8.0.0">
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <website>https://www.google.com/search?q=https://yourwebsite.com</website>
 
@@ -49,6 +50,8 @@ Use shell short-circuiting (&& / ||) for robust exit code checking
 mkdir -p &plugdir; && logger 'Disk Consolidator: Directory created successfully.' || logger 'Disk Consolidator: CRITICAL ERROR creating directory!'
 
 3. Log directory creation outcome to screen
+
+FIX: Removed fragile backslashes from the if statement to prevent script parsing failure.
 
 if [ -d "&plugdir;" ]; then
 echo 'Directory creation SUCCESS. Continuing to file copy.'
