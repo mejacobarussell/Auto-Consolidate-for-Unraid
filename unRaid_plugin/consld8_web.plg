@@ -4,7 +4,7 @@
 <!-- ID is ConsolidatorTool -->
 <id>ConsolidatorTool</id>
 <name>Disk Consolidator (consld8)</name>
-<version>1.1.3</version>
+<version>1.1.4</version>
 <category>Tools</category>
 <description>Consolidates fragmented user share folders onto a single disk using rsync, based on the consld8 script.</description>
 <author>Jacob Russell</author>
@@ -19,11 +19,11 @@
 <plugin_dialog title="Disk Consolidator Installation" yes="Done" no="No" window_content='The Disk Consolidator has been successfully installed. You can find it under the Plugins menu. Please restart the Unraid WebUI to see the menu entry immediately.'>
 </plugin_dialog>
 
-<!-- NEW: Pre-install hook updated to use 'echo' for screen output and 'logger' for system log -->
+<!-- CRITICAL FIX: Simplified pre_install to only run mkdir to avoid multi-command shell errors, which stopped folder creation. -->
 
 <hook event="pre_install">
 <if_true>
-<shell_cmd>echo "--- Disk Consolidator Installation Start ---"; logger "Disk Consolidator: Starting installation (v1.1.3)."; echo "Creating plugin destination directory..."; mkdir -p /usr/local/emhttp/plugins/ConsolidatorTool; logger "Disk Consolidator: Directory created successfully."</shell_cmd>
+<shell_cmd>mkdir -p /usr/local/emhttp/plugins/ConsolidatorTool</shell_cmd>
 </if_true>
 </hook>
 
@@ -46,11 +46,12 @@
 <file dest="/usr/local/emhttp/plugins/ConsolidatorTool"/>
 </remove>
 
-<!-- POST_INSTALL HOOK: Updated to use 'echo' for screen output and 'logger' for system log -->
+<!-- POST_INSTALL HOOK: Simplified commands, now using single quotes for robustness. -->
 
 <hook event="post_install">
 <if_true>
-<shell_cmd>echo "--- File Copy Complete ---"; logger "Disk Consolidator: File copy complete. Plugin installed successfully (v1.1.3)."; echo "Restart WebUI for finalization."</shell_cmd>
+<shell_cmd>echo '--- File Copy Complete ---'; logger 'Disk Consolidator: Files copied. Plugin installed successfully (v1.1.4).'; echo 'Restart WebUI for finalization.'
+</shell_cmd>
 </if_true>
 </hook>
 
