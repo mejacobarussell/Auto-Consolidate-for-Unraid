@@ -5,7 +5,7 @@
 
 <!ENTITY author "Jacob Russell">
 
-<!ENTITY version "1.2.2">
+<!ENTITY version "1.2.3">
 
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 
@@ -36,13 +36,22 @@
 <FILE Run="/bin/bash" Method="install">
 <INLINE>
 
+1. Verbose message for screen and log
 
+echo '--- Disk Consolidator Installation Start (v&version;) ---'
+logger 'Disk Consolidator: Starting installation (v&version;). Executing pre-install hook.'
+
+2. Explicitly create the plugin directory (CRITICAL STEP)
 
 echo 'Attempting to create destination directory: &plugdir;'
 
 Use shell short-circuiting (&& / ||) for robust exit code checking
 
 mkdir -p &plugdir; && logger 'Disk Consolidator: Directory created successfully.' || logger 'Disk Consolidator: CRITICAL ERROR creating directory!'
+
+3. Log directory creation outcome to screen
+
+CRITICAL FIXES: DTD brackets and IF statement backslashes removed for clean XML parsing and successful bash execution.
 
 if [ -d "&plugdir;" ]; then
 echo 'Directory creation SUCCESS. Continuing to file copy.'
