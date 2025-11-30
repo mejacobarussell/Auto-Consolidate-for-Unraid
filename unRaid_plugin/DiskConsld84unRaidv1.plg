@@ -35,10 +35,6 @@
 
 <!-- REMOVED <menu> block to focus on the essential <page> link -->
 
-<remove>
-<file dest="/usr/local/emhttp/plugins/disk_consolidator"/>
-</remove>
-
 <!-- FIX: POST_INSTALL HOOK UPDATED to use sleep and background process to allow the installation lock to release. Removed logger line. -->
 
 <hook event="post_install">
