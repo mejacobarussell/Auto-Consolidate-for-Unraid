@@ -1,4 +1,6 @@
 #!/bin/bash
+#To prevent any single array disk hosting the TVSHOWS
+#share from falling below a defined free space threshold.
 set -u # Treat unset variables as an error.
 set -e # Exit immediately if a command exits with a non-zero status.
 
@@ -83,7 +85,7 @@ if [ "$mode_set_by_arg" = false ]; then
     printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
     echo "No operation mode (-t or -r) was specified. Please select a mode to proceed."
     printf "%b\n" "  ${GREEN}1${RESET}) Test Mode (Dry Run): Plan moves, but DO NOT execute."
-    printf "%b\shows disksn" "  ${RED}2${RESET}) Run Mode (Move): Plan and EXECUTE all necessary moves."
+    printf "%b\n" "  ${RED}2${RESET}) Run Mode (Move): Plan and EXECUTE all necessary moves."
     echo ""
 
     # Construct colored prompt using printf -v
