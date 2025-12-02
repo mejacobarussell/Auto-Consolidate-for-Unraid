@@ -616,7 +616,7 @@ auto_plan_and_execute() {
     while IFS= read -r full_src_path; do
         
         share_component="${full_src_path#/mnt/user/}" # e.g., TVSHOWS/ShowName
-        if [ -z "$share_component" ]; then continue; endif
+        if [ -z "$share_component" ]; then continue; fi # <--- FIX: Changed 'endif' to 'fi'
         
         folder_name="${full_src_path##*/}" # Just the folder name (e.g., ShowName)
         folder_size=$(du -s "$full_src_path" 2>/dev/null | cut -f 1)
