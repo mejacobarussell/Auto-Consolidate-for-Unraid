@@ -1,15 +1,15 @@
 #!/bin/bash
-#To prevent any single array disk hosting the TVSHOWS
-#share from falling below a defined free space threshold.
+#To prevent any single array disk hosting a selected share
+#from falling below a defined free space threshold.
 set -u # Treat unset variables as an error.
 set -e # Exit immediately if a command exits with a non-zero status.
 
-# unraid-share-balancer - Target Free Space Enforcement for /mnt/user/TVSHOWS
-VERSION="1.0.0"
+# unraid-share-balancer - Target Free Space Enforcement for User Shares
+VERSION="1.1.3" # Updated version number for verbose skip message fix
 
 # --- Configuration & Constants ---
-# Target share to analyze and balance
-TARGET_SHARE_NAME="TVSHOWS"
+# Default share name for display purposes only, the actual selection is dynamic
+DEFAULT_SHARE_NAME="Any Share" 
 # 500 GB target minimum free space (in 1K blocks, as df/du output)
 TARGET_FREE_KB=524288000
 # Safety margin for the DESTINATION disk (must remain above this AFTER the move)
@@ -38,9 +38,8 @@ unraid-share-balancer v$VERSION
 usage: unraid-share-balancer [options:-h|-t|-r|-v]
 
 This script enforces a minimum free space of $(numfmt --to=iec --from-unit=1K $TARGET_FREE_KB) 
-on all array disks that host the '/mnt/user/$TARGET_SHARE_NAME' share.
-It moves the largest subfolders (TV show names) to the freest valid disk until 
-the target is met.
+on all array disks that host a selected user share.
+It moves the largest subfolders to the freest valid disk until the target is met.
 
 options:
   -h      Display this usage information.
@@ -49,6 +48,7 @@ options:
   -v      Print more information (recommended for detailed logging).
 
 If neither -t nor -r is specified, the script will prompt for the operation mode.
+The script will then prompt for which user share(s) to balance.
 
 EOF
 }
@@ -111,6 +111,69 @@ if [ "$mode_set_by_arg" = false ]; then
     echo ""
 fi
 
+# New function to select one or more shares to balance
+select_target_shares() {
+    # >>> START FIX: Redirect all interactive output to STDERR (>&2) to prevent capture by command substitution.
+    printf "%b\n" "${CYAN}------------------------------------------------${RESET}" >&2
+    printf "%b\n" "${CYAN}     UnRAID Share Selection (Step 2/2)          ${RESET}" >&2
+    printf "%b\n" "${CYAN}------------------------------------------------${RESET}" >&2
+
+    # Get a list of all non-hidden user shares (excluding .*)
+    local IFS=$'\n' 
+    local SHARE_LIST=($(find /mnt/user/ -maxdepth 1 -mindepth 1 -type d -not -name ".\*" -printf '%P\n' | sort))
+    local IFS=$' '
+    
+    if [ ${#SHARE_LIST[@]} -eq 0 ]; then
+        printf "%b\n" "${RED}ERROR: No user shares found in /mnt/user/. Exiting.${RESET}" >&2
+        return 1
+    fi
+
+    echo "Available User Shares to Balance:" >&2
+    local count=1
+    for share in "${SHARE_LIST[@]}"; do
+        printf "  %b) %s\n" "${GREEN}$count${RESET}" "$share" >&2
+        count=$((count + 1))
+    done
+    
+    echo "" >&2
+    echo "Enter the number(s) of the share(s) you wish to balance, separated by spaces (e.g., 1 3 4):" >&2
+    
+    local selected_shares=()
+    while true; do
+        # read -p automatically writes the prompt to the terminal
+        read -r -p "Share selection: " SHARE_SELECTION_INPUT
+        
+        # Split input by spaces and validate
+        selected_shares=()
+        local valid_input=true
+        
+        for num in $SHARE_SELECTION_INPUT; do
+            if ! [[ "$num" =~ ^[0-9]+$ ]]; then
+                valid_input=false
+                break
+            fi
+            if [ "$num" -ge 1 ] && [ "$num" -le ${#SHARE_LIST[@]} ]; then
+                # Map the input number to the actual share name
+                selected_shares+=("${SHARE_LIST[$((num - 1))]}")
+            else
+                valid_input=false
+                break
+            fi
+        done
+        
+        if [ "$valid_input" = true ] && [ ${#selected_shares[@]} -gt 0 ]; then
+            printf "%b\n" "${GREEN}Selected shares: ${selected_shares[*]}${RESET}" >&2
+            break
+        else
+            printf "%b\n" "${RED}Invalid selection. Please enter valid number(s) separated by spaces.${RESET}" >&2
+        fi
+    done
+    
+    # Export the array to STDOUT for the main execution logic to capture
+    echo "${selected_shares[@]}" 
+    return 0
+} # <<< END FIX
+
 # Function to get the current free space in 1K blocks for a disk
 # Argument 1: The disk name (e.g., 'disk1')
 get_disk_free_kb() {
@@ -129,21 +192,23 @@ get_disk_free_kb() {
 # Function to find the best destination disk for a given move size
 # Argument 1: Size of the folder to move (in KB)
 # Argument 2: Reference array of disk free space (DISK_FREE)
+# Argument 3: The target share name (e.g., 'TVSHOWS')
 # Output: Disk name (e.g., 'disk3') or empty string if no valid destination found
 find_best_destination() {
     local move_size_kb="$1"
     local -n disk_free_ref="$2" # Reference to the associative array
+    local target_share_name="$3"
     local best_disk=""
     local max_free=0
 
-    for i in {1..9}; do
-        local disk_name="disk$i"
+    # Dynamically find all disks (disk1, disk2, ..., disk10, etc.)
+    for disk_name in $(ls /mnt | grep -E '^disk[0-9]+$'); do
         local disk_path="/mnt/$disk_name"
         local current_free="${disk_free_ref[$disk_name]:-0}" # Get current projected free space
         
-        # 1. Must host the target share (TVSHOWS)
-        if [ ! -d "$disk_path/$TARGET_SHARE_NAME" ]; then
-            [ $verbose -gt 1 ] && printf "   [Dest Check]: %s does not contain /%s. Skip.\n" "$disk_name" "$TARGET_SHARE_NAME"
+        # 1. Must host the target share (e.g., TVSHOWS)
+        if [ ! -d "$disk_path/$target_share_name" ]; then
+            [ $verbose -gt 1 ] && printf "   [Dest Check]: %s does not contain /%s. Skip.\n" "$disk_name" "$target_share_name"
             continue
         fi
 
@@ -166,19 +231,21 @@ find_best_destination() {
 }
 
 # Function to safely execute rsync move
-# Argument 1: The full path to the source folder on the physical disk (e.g., /mnt/disk1/TVSHOWS/ShowName)
+# Argument 1: The full path to the source folder on the physical disk (e.g., /mnt/disk1/ShareName/ShowName)
 # Argument 2: The destination disk name (e.g., 'disk5')
+# Argument 3: The target share name (e.g., 'TVSHOWS')
 execute_move() {
     local source_full_path="$1"
     local dest_disk="$2"
+    local target_share_name="$3"
     
     # Extract the ShowName (e.g., 'ShowName')
     local show_name="${source_full_path##*/}"
     
-    # Construct the destination path (e.g., /mnt/disk5/TVSHOWS/ShowName)
-    local dest_path="/mnt/$dest_disk/$TARGET_SHARE_NAME/$show_name"
+    # Construct the destination path (e.g., /mnt/disk5/ShareName/ShowName)
+    local dest_path="/mnt/$dest_disk/$target_share_name/$show_name"
     
-    printf "%b\n" "${CYAN}>> Moving '${show_name}' from ${source_full_path#/mnt/} to ${dest_disk}/${TARGET_SHARE_NAME}${RESET}"
+    printf "%b\n" "${CYAN}>> Moving '${show_name}' from ${source_full_path#/mnt/} to ${dest_disk}/${target_share_name}${RESET}"
 
     if [ "$dry_run" = true ]; then
         [ $verbose -gt 0 ] && printf "%b\n" "   ${YELLOW}[DRY RUN] Would move to '$dest_path'.${RESET}"
@@ -207,13 +274,14 @@ execute_move() {
 }
 
 
-# --- Main Logic ---
-
+# --- Main Logic (now accepts target share name as argument) ---
+# The main balancing logic is now encapsulated to process one share at a time.
 disk_balancer() {
-    printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
-    printf "%b\n" "${CYAN}     Starting UNRAID SHARE BALANCER v$VERSION           ${RESET}"
-    printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
-    printf "%b\n" "Target Share: ${BLUE}/mnt/user/$TARGET_SHARE_NAME${RESET}"
+    local TARGET_SHARE_NAME="$1"
+    
+    printf "\n%b\n" "${CYAN}=======================================================${RESET}"
+    printf "%b\n" "${CYAN}     Starting BALANCING for share: ${BLUE}$TARGET_SHARE_NAME${RESET}"
+    printf "%b\n" "${CYAN}=======================================================${RESET}"
     printf "%b\n" "Target Min Free: ${BLUE}$(numfmt --to=iec --from-unit=1K $TARGET_FREE_KB)${RESET}"
     printf "%b\n" "Destination Safety Margin: ${BLUE}$(numfmt --to=iec --from-unit=1K $DEST_SAFETY_MARGIN_KB)${RESET}"
     
@@ -231,9 +299,9 @@ disk_balancer() {
     # STEP 1: IDENTIFY DISKS AND EVACUATION TARGETS
     # =====================================================================
     
-    printf "%b\n" "1. Scanning disks (disk1-disk9) for free space and share location..."
-    for i in {1..9}; do
-        local disk_name="disk$i"
+    printf "%b\n" "1. Scanning disks for free space and share location..."
+    # Dynamically find all disks (disk1, disk2, ..., disk10, etc.)
+    for disk_name in $(ls /mnt | grep -E '^disk[0-9]+$'); do
         local disk_path="/mnt/$disk_name"
 
         # Check if disk exists and contains the share
@@ -253,7 +321,7 @@ disk_balancer() {
     done
 
     if [ ${#EVACUATION_DISKS[@]} -eq 0 ]; then
-        printf "\n%b\n" "${GREEN}No disks hosting $TARGET_SHARE_NAME are below the $(numfmt --to=iec --from-unit=1K $TARGET_FREE_KB) target. Nothing to do.${RESET}"
+        printf "\n%b\n" "${GREEN}No disks hosting $TARGET_SHARE_NAME are below the $(numfmt --to=iec --from-unit=1K $TARGET_FREE_KB) target. Nothing to do for this share.${RESET}"
         return 0
     fi
     
@@ -290,8 +358,10 @@ disk_balancer() {
         
         local current_moved_kb=0
 
-        # Find all TV show folders on this disk, sorted by size (largest first)
+        # Find all subfolders (TV show folders) on this disk, sorted by size (largest first)
         local IFS=$'\n' 
+        # Note: We are using du -k --max-depth=1 "$source_path" | sort -rn | grep -v "$source_path$"
+        # This approach assumes subfolders of the share are the items to move (e.g., ShowName)
         local CANDIDATES=($(du -k --max-depth=1 "$source_path" | sort -rn | grep -v "$source_path$"))
         local IFS=$' '
         
@@ -311,7 +381,7 @@ disk_balancer() {
             fi
             
             # Find the best valid destination disk
-            local dest_disk=$(find_best_destination "$folder_size_kb" DISK_FREE)
+            local dest_disk=$(find_best_destination "$folder_size_kb" DISK_FREE "$TARGET_SHARE_NAME")
 
             if [ -n "$dest_disk" ] && [ "$dest_disk" != "$source_disk" ]; then
                 
@@ -321,8 +391,9 @@ disk_balancer() {
                 total_moved_kb=$((total_moved_kb + folder_size_kb))
 
                 # Update the projected free space for both source and destination disks
-                DISK_FREE["$source_disk"]=$((${DISK_FREE["$source_disk"]} + folder_size_kb))
-                DISK_FREE["$dest_disk"]=$((${DISK_FREE["$dest_disk"]} - folder_size_kb))
+                # FIX: Use parameter expansion (:-0) to prevent "unbound variable" error under set -u
+                DISK_FREE["$source_disk"]=$((${DISK_FREE["$source_disk"]:-0} + folder_size_kb))
+                DISK_FREE["$dest_disk"]=$((${DISK_FREE["$dest_disk"]:-0} - folder_size_kb))
 
                 printf "  ${BLUE}[PLAN %d]: Move %s (%s) from %s to %s.${RESET}\n" \
                     "$move_count" \
@@ -332,9 +403,10 @@ disk_balancer() {
                     "$dest_disk"
 
                 # Execute the move if not in dry run mode
-                execute_move "$folder_full_path" "$dest_disk"
+                execute_move "$folder_full_path" "$dest_disk" "$TARGET_SHARE_NAME"
             else
-                printf "  ${YELLOW}[SKIP]: %s (%s) - No valid destination disk found.${RESET}\n" \
+                # Only show skip message in verbose mode (e.g., -v)
+                [ $verbose -gt 1 ] && printf "  ${YELLOW}[SKIP]: %s (%s) - No valid destination disk found.${RESET}\n" \
                     "$show_name" \
                     "$(numfmt --to=iec --from-unit=1K $folder_size_kb)"
             fi
@@ -353,7 +425,7 @@ disk_balancer() {
     # =====================================================================
     echo ""
     printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
-    printf "%b\n" "${GREEN}DISK BALANCING RUN COMPLETED!${RESET}"
+    printf "%b\n" "${GREEN}BALANCING COMPLETED FOR SHARE: $TARGET_SHARE_NAME${RESET}"
     printf "%b\n" "Total Folders Moved (Planned): ${BLUE}$move_count${RESET}"
     printf "%b\n" "Total Data Moved (Planned): ${BLUE}$(numfmt --to=iec --from-unit=1K $total_moved_kb)${RESET}"
     printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
@@ -364,4 +436,25 @@ disk_balancer() {
 }
 
 # --- Main Execution Flow ---
-disk_balancer
+main() {
+    # 1. Select the target shares interactively
+    local SHARES_TO_BALANCE_STR
+    SHARES_TO_BALANCE_STR=$(select_target_shares)
+    
+    if [ $? -ne 0 ] || [ -z "$SHARES_TO_BALANCE_STR" ]; then
+        printf "%b\n" "${RED}No shares selected. Exiting.${RESET}" >&2
+        exit 1
+    fi
+
+    # Convert the space-separated string back into an array
+    local SHARES_TO_BALANCE=($SHARES_TO_BALANCE_STR)
+    
+    # 2. Iterate over all selected shares and run the balancer logic
+    for share in "${SHARES_TO_BALANCE[@]}"; do
+        disk_balancer "$share"
+    done
+    
+    printf "\n%b\n" "${GREEN}ALL SELECTED SHARE BALANCING COMPLETE!${RESET}"
+}
+
+main
