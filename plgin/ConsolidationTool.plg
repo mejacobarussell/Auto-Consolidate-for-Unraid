@@ -1,0 +1,2 @@
+# Example command needed in the .plg's 'do_install' function:
+chmod +x /usr/local/emhttp/plugins/ConsolidationTool/colsold8.sh
