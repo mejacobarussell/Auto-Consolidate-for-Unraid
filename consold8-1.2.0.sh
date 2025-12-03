@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
-# consld8-auto - Fully Automated or Interactive Consolidation for unRAID (v1.1.0)
-VERSION="1.1.0"
+# consld8-auto - Fully Automated or Interactive Consolidation for unRAID (v1.2.0)
+VERSION="1.2.0"
 
 # --- Configuration & Constants ---
 BASE_SHARE="/mnt/user/TVSHOWS"
@@ -40,7 +40,7 @@ EOF
 }
 
 # Set shell options
-shopt -s nullglob   # Corrected syntax to enable nullglob option
+shopt -s nullglob # FIX: Corrected syntax to enable nullglob option using '-s'
 [ ${DEBUG:=0} -gt 0 ] && set -x
 
 # --- Variables ---
@@ -729,7 +729,7 @@ auto_plan_and_execute() {
     # Cleanup temporary file
     rm -f "$TEMP_CANDIDATES"
 
-    # 3. Execute the Plan (Unchanged logic from here)
+    # 3. Execute the Plan (WITH PROGRESS INDICATOR)
     echo ""
     printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
     if [ "${#PLAN_ARRAY[@]}" -eq 0 ]; then
@@ -744,14 +744,29 @@ auto_plan_and_execute() {
     
     printf "%b\n" "${CYAN}Executing Plan...${RESET}"
     
+    # --- ADDITIONS FOR PROGRESS INDICATOR START ---
+    local TOTAL_MOVES=${#PLAN_ARRAY[@]}
+    local CURRENT_MOVE_INDEX=1
+    
+    # Display the total number of items to move
+    printf "%b\n" "${CYAN}Total Folders to Move: ${BLUE}$TOTAL_MOVES${RESET}${RESET}"
+    
     for plan_item in "${PLAN_ARRAY[@]}"; do
         SRCDIR="${plan_item%|*}"        
         DESTDISK="${plan_item#*|}"      
         
+        # Display the current move progress
+        printf "\n%b\n" "${CYAN}--------------------------------------------------------${RESET}"
+        printf "%b\n" "${CYAN}[PROGRESS: ${CURRENT_MOVE_INDEX}/${TOTAL_MOVES}] Moving '${SRCDIR}' to '${DESTDISK}'${RESET}"
+        printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
+
         execute_move "$SRCDIR" "$DESTDISK"
         
         printf "%b\n" "${GREEN}Move complete for $SRCDIR.${RESET}"
+        
+        CURRENT_MOVE_INDEX=$((CURRENT_MOVE_INDEX + 1))
     done
+    # --- ADDITIONS FOR PROGRESS INDICATOR END ---
 
     printf "%b\n" "${GREEN}ALL MOVES COMPLETE.${RESET}"
 }
