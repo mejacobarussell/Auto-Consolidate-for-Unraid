@@ -7,7 +7,28 @@ VERSION="1.2.2"
 # v1.2.2: Fixed a color error in 'Progress Only' (Mode 3) scan output where the
 #         ANSI reset code ('\033[0m') was printing literally due to incorrect
 #         printf formatting. The progress line is now correctly formatted.
-# v1.2.1: Implemented the 'Progress Only' (Mode 3) scan verbosity option.
+#
+# v1.2.1: Implemented the 'Progress Only' (Mode 3) scan verbosity option for
+#         Automatic Mode, which displays only a real-time folder count during
+#         the scan phase, hiding detailed planning output.
+#
+# v1.1.0: Enhanced the Dry Run Clarity message in execute_move to explicitly
+#         remind the user that the -f flag is required at script start to
+#         perform actual file movement. Also corrected the 'shopt -s nullglob'
+#         syntax in the script's header.
+#
+# v1.0.3: Focused on improving the user experience for both automatic planning
+#         and manual execution, adding crucial feedback and transparency.
+#         - New Features: Interactive Verbosity Prompt (Automatic Mode);
+#           Safety Margin Configuration: The script now prompts the user to
+#           set the minimum required free space (safety margin) in GB before
+#           running the automated scan.
+#         - Fixes & Improvements: Share Selection Robustness (fixed EOF error);
+#           Code Cleanup.
+#
+# v1.0.2: Initial Feature Release
+#         - New Features: Interactive Mode (-I); Automated Mode (-a) core logic;
+#           Pre-Consolidation Check: Added the 'is_consolidated' function.
 # ---------------------
 
 # --- Configuration & Constants ---
@@ -47,7 +68,7 @@ EOF
 }
 
 # Set shell options
-shopt -s nullglob # FIX: Corrected syntax to enable nullglob option using '-s'
+shopt s nullglob # FIX: Corrected syntax to enable nullglob option using '-s'
 [ ${DEBUG:=0} -gt 0 ] && set -x
 
 # --- Variables ---
@@ -164,7 +185,8 @@ execute_move() {
     
     if [ "$dry_run" = true ]; then
         printf "%b\n" "   ${YELLOW}[DRY RUN] Would consolidate all fragments of '$src_dir_name' to '$dest_path'.${RESET}"
-        printf "%b\n" "   ${YELLOW}[DRY RUN] Would use rsync to move and remove source files.${RESET}"
+        # Added clarity about the -f flag (v1.1.0 change)
+        printf "%b\n" "   ${YELLOW}[DRY RUN] Would use rsync to move and remove source files. Use the -f flag at script start to perform actual moves.${RESET}"
         return 0
     fi
     
@@ -641,7 +663,7 @@ auto_plan_and_execute() {
         
         if [ "$folder_size" -lt 10 ]; then 
             if [ "$scan_verbosity_mode" -eq 3 ]; then
-                # FIX: Use single %b for full colored output to prevent literal ANSI code printing
+                # FIX (v1.2.2): Use single %b for full colored output to prevent literal ANSI code printing
                 printf "\r%b" "${CYAN}Processing folders: ${BLUE}$FOLDER_COUNTER${RESET}"
             fi
             continue 
@@ -652,7 +674,7 @@ auto_plan_and_execute() {
             if [ "$scan_verbosity_mode" -eq 1 ]; then
                 printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $folder_size)) - Already consolidated. Skipping calculation.${RESET}"
             elif [ "$scan_verbosity_mode" -eq 3 ]; then
-                 # FIX: Use single %b for full colored output
+                 # FIX (v1.2.2): Use single %b for full colored output
                  printf "\r%b" "${CYAN}Processing folders: ${BLUE}$FOLDER_COUNTER${RESET}"
             fi
             continue
@@ -673,7 +695,7 @@ auto_plan_and_execute() {
               if [ "$scan_verbosity_mode" -ne 3 ]; then
                   printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' - No file fragments found. Skipping.${RESET}"
               else
-                  # FIX: Use single %b for full colored output
+                  # FIX (v1.2.2): Use single %b for full colored output
                   printf "\r%b" "${CYAN}Processing folders: ${BLUE}$FOLDER_COUNTER${RESET}"
               fi
               continue
@@ -750,7 +772,7 @@ auto_plan_and_execute() {
                 printf "%b\n" "             Priority: Files=${BLUE}$MAX_FILE_COUNT${RESET}, Free=$(numfmt --to=iec --from-unit=1K $MAX_FREE_SPACE)${RESET}"
             else
                 # Progress indicator in Mode 3
-                # FIX: Use single %b for full colored output
+                # FIX (v1.2.2): Use single %b for full colored output
                 printf "\r%b" "${CYAN}Processing folders: ${BLUE}$FOLDER_COUNTER${RESET}"
             fi
 
@@ -760,7 +782,7 @@ auto_plan_and_execute() {
                 printf "%b\n" "${RED}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $TOTAL_FOLDER_SIZE)) - No disk meets the $(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB) safety margin requirement.${RESET}"
             else
                 # Progress indicator in Mode 3
-                # FIX: Use single %b for full colored output
+                # FIX (v1.2.2): Use single %b for full colored output
                 printf "\r%b" "${CYAN}Processing folders: ${BLUE}$FOLDER_COUNTER${RESET}"
             fi
         fi
@@ -851,7 +873,7 @@ if [ "$mode_set_by_arg" = false ]; then
             *)
                 printf "%b\n" "${RED}Invalid selection. Please enter 1 for Interactive or 2 for Automatic.${RESET}"
                 ;;
-        esac
+        </dev/null
     done
     echo ""
 fi
