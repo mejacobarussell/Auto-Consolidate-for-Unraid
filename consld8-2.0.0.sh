@@ -76,7 +76,7 @@ EOF
 }
 
 # Set shell options
-shopt s nullglob # FIX: Corrected syntax to enable nullglob option using '-s'
+shopt -s nullglob # FIX: Corrected syntax to enable nullglob option using '-s'
 [ ${DEBUG:=0} -gt 0 ] && set -x
 
 # --- Variables ---
