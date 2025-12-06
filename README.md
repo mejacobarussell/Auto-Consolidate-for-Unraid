@@ -16,7 +16,7 @@ If this script helps you keep your unRAID array tidy, please consider supporting
 ![image](https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/example.png)
 
 
- # 💾 consld8: UnRAID Share Consolidation Script
+ # 💾 consld8-auto: UnRAID Share Consolidation Script (v2.0.0)
 
 **A powerful bash script for managing and consolidating fragmented user shares across your unRAID array disks.**
 
@@ -31,12 +31,12 @@ In an unRAID environment, user shares often become fragmented, with different pa
 ### Key Features
 
 * **Dual Operation Modes:** Run in **Interactive Mode** for manual control, or **Automatic Mode** for fully optimized consolidation planning.
+* **Fully Automated Cron/Scheduler Support (New in v2.0.0):** Use the new `-L <path>` flag alongside `-a` to bypass all interactive prompts (Share Selection, Safety Margin, Verbosity), making it perfect for scheduling via the User Scripts plugin or cron.
 * **Intelligent Planning (Auto Mode):** The script scans fragmented folders and selects the optimal destination disk based on a tiered priority system:
     1.  **Safety Margin:** Must meet a configurable minimum free space (default 200 GB) after the move.
-    2.  **Existing Files:** Prioritizes moving to the disk that **already holds the most files** for that specific folder, reducing I/O and increasing the likelihood of successful spin-down.
+    2.  **Existing Files:** Prioritizes moving to the disk that **already holds the largest fragment** for that specific folder, reducing I/O and increasing the likelihood of successful spin-down.
     3.  **Free Space:** Uses available free space as a tie-breaker.
 * **Dry Run/Test Mode:** Default-enabled safety feature to simulate the entire move process without touching files.
-* **User Share Selector:** Easily pick the top-level user share (e.g., `TVSHOWS`, `MOVIES`) to process.
 * **Safe Execution:** Uses `rsync -avh --remove-source-files` to ensure the move completes before the source files are deleted.
 
 ---
@@ -60,15 +60,18 @@ This script is written in **Bash** and requires standard Linux tools available o
 2.  **Download the script:**
 
       ```bash
-    wget https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consld8-1.0.3.sh
+    wget [https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consld8-2.0.0.sh](https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consld8-2.0.0.sh)
+    # Note: Ensure you download the latest version, or rename the file after download.
+    ```
 
 
 3.  **Make the script executable:**
 
     ```bash
-    chmod +x consld8-1.0.3.sh
-   
-5.  *(Optional but Recommended):* Run it using the **User Scripts** plugin on unRAID for easier management.
+    chmod +x consld8-2.0.0.sh
+    ```
+
+4.  *(Optional but Recommended):* Run it using the **User Scripts** plugin on unRAID for easier management.
 
 ---
 
@@ -86,58 +89,17 @@ The script defaults to **Test Mode (Dry Run)** for safety. Use the `-f` flag to 
 | `-v` | Increase verbosity (recommended for Auto Mode planning). | Both |
 | `-a` | **FULL AUTOMATIC PLANNING MODE.** Scans all folders, generates an optimized plan, and executes (if `-f` is also used). | Auto |
 | `-I` | **INTERACTIVE MODE.** Prompts you to select a specific folder and destination disk. | Interactive |
+| **`-L <path>`** | **REQUIRED for non-interactive execution with `-a`.** Sets the base share path (e.g., `/mnt/user/TVSHOWS`) non-interactively, bypassing prompts. | Auto |
+
+---
 
 ### 1. Interactive Mode Example
 
 Use this mode for granular control over one specific folder.
 
+```bash
 # Run in Interactive Mode and Dry Run (Default)
-./consld8.sh -I
+./consld8-2.0.0.sh -I
 
 # Run in Interactive Mode and EXECUTE the move
-./consld8.sh -I -f
-
-### 2. Automatic Mode Example
-
-Use this mode to let the script manage the entire array cleanup.
-
-# Run in Auto Mode and Test the full plan (Recommended first run)
-./consld8.sh -a -v
-
-# Run in Auto Mode and EXECUTE the full plan
-./consld8.sh -a -f -v
-
-⚙️ Configuration & Safety
-The script is configured using internal variables and runtime prompts.
-
-Safety Margin
-
-By default, the script enforces a 200 GB minimum free space safety margin on the target disk after the consolidation move is planned.
-
-In Automatic Mode, you are prompted to adjust this value before the planning phase begins.
-
-Consolidation Logic
-
-The script uses the following command for moving files. This method copies the contents to the destination and removes the source files only if the copy was successful, ensuring data integrity.
-
-rsync -avh --remove-source-files [source_path]/ [dest_path]/
-
-
-🤝 Contributing
-I welcome suggestions and contributions to improve the efficiency and safety of this script for the unRAID community.
-
-Fork the repository.
-
-Create your feature branch (git checkout -b feature/AmazingFeature).
-
-Commit your changes (git commit -m 'Add some AmazingFeature').
-
-Push to the branch (git push origin feature/AmazingFeature).
-
-📝 License
-Distributed under the Unliscense See LICENSE for more information.
-
-📧 Contact
-[Jacob Russell] - [Mrjacobarussell@gmail.com]
-
-Project Link: https://github.com/mejacobrussell/Auto-Consolidate-for-Unraid
+./consld8-2.0.0.sh -I -f
