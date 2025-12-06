@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
-# consld8-auto - Fully Automated or Interactive Consolidation for unRAID (v2.0.0)
-VERSION="2.0.0"
+# consld8-auto - Fully Automated or Interactive Consolidation for unRAID (v2.1.0)
+VERSION="2.1.0"
 
 # --- Version Notes ---
+# v2.1.0: ENHANCEMENT - Added flag -s <GB> to non-interactively set the minimum
+#         free space Safety Buffer in Gigabytes, overriding the default. Input 
+#         validation ensures a positive integer is provided.
+#
 # v2.0.0: MAJOR RELEASE - Added full support for non-interactive execution (Cron/Automation).
 #         - New Flag: -L <path> to non-interactively set the base share path (e.g., /mnt/user/TVSHOWS).
 #         - Logic Update: When both -a (Automatic Mode) and -L are provided, the script
@@ -23,24 +27,18 @@ VERSION="2.0.0"
 #         perform actual file movement. Also corrected the 'shopt -s nullglob'
 #         syntax in the script's header.
 #
-# v1.0.3: Focused on improving the user experience for both automatic planning
-#         and manual execution, adding crucial feedback and transparency.
-#         - New Features: Interactive Verbosity Prompt (Automatic Mode);
-#           Safety Margin Configuration: The script now prompts the user to
-#           set the minimum required free space (safety margin) in GB before
-#           running the automated scan.
-#         - Fixes & Improvements: Share Selection Robustness (fixed EOF error);\
-#           Code Cleanup.
+# v1.0.3: Minor bug fixes for handling base share paths with trailing slashes.
 #
-# v1.0.2: Initial Feature Release
-#         - Introduced the distinction between Interactive (-I) and Automatic (-a) modes.
-#         - Implemented safety checks, a dry run mode (-t), and a force mode (-f).
-# ---------------------
+# v1.0.2: Minor logic updates and cleanup, ensuring better robustness in find/du commands.
+#
+# v1.0.1: Initial release with Interactive (-I) and Auto Planning (-a) modes.
+# -------------------
 
 # --- Configuration & Constants ---
+# Default settings
+DEFAULT_SAFETY_BUFFER_GB="200"
+
 BASE_SHARE="/mnt/user/TVSHOWS"
-# 200 GB minimum free space safety margin (in 1K blocks, as df/du output)
-MIN_FREE_SPACE_KB=209715200
 # ---------------------------------
 
 # --- ANSI Color Definitions ---
@@ -56,7 +54,7 @@ usage(){
 cat << EOF
 consld8-auto v$VERSION
 
-usage: consld8-auto [options:-h|-t|-f|-v|-a|-I|-L <path>]
+usage: consld8-auto [options:-h|-t|-f|-v|-a|-I|-L <path>|-s <GB>]
 
 This script has two modes:
 1. Interactive Mode (Requires -I flag): Prompts for folder and disk selection.
@@ -71,6 +69,7 @@ options:
   -I      *** Run in INTERACTIVE MODE (Explicitly selected) ***
   -L <path> Set the base share path (e.g., /mnt/user/TVSHOWS) non-interactively.
             REQUIRED for non-interactive cron execution with -a.
+  -s <GB>   Sets the required minimum Safety Buffer in Gigabytes (GB). Overrides default (${DEFAULT_SAFETY_BUFFER_GB} GB).
 
 EOF
 }
@@ -84,12 +83,19 @@ verbose=1
 dry_run=true      # Default to safety (Test mode)
 auto_mode=false   # Default is set to false, but mode must be selected if no flag is provided
 mode_set_by_arg=false # Tracks if -a or -I was provided
-share_set_by_arg=false # *** NEW: Tracks if -L was provided ***
-ACTIVE_MIN_FREE_KB="$MIN_FREE_SPACE_KB" # Variable to store the user-configured minimum free space
+share_set_by_arg=false # Tracks if -L was provided
+safety_set_by_arg=false # Tracks if -s was provided
+
+# Variable to store the user-configured minimum free space (in GB for input/display)
+SAFETY_BUFFER_GB="${DEFAULT_SAFETY_BUFFER_GB}" 
+# Variable to store the minimum free space in 1K blocks for comparison.
+ACTIVE_MIN_FREE_KB=0 
+SCRIPT_VERSION="$VERSION"
 # -------------------
 
 # --- Argument Parsing ---
-while getopts "htfvaIL:" opt; do
+# Updated getopts string to include 's:'
+while getopts "htfvaIL:s:" opt; do
   case "$opt" in
     h)
       usage
@@ -106,19 +112,28 @@ while getopts "htfvaIL:" opt; do
       ;;
     a) # Activate Automatic Mode
       auto_mode=true
-      mode_set_by_arg=true # Only set to true if a mode (-a or -I) is explicitly provided
+      mode_set_by_arg=true 
       ;;
     I) # Activate Interactive Mode (Explicitly selected)
       auto_mode=false
-      mode_set_by_arg=true # Only set to true if a mode (-a or -I) is explicitly provided
+      mode_set_by_arg=true 
       ;;
-    L) # *** NEW: Specify Base Share Path for non-interactive use ***
-      # Check if the path exists before setting
+    L) # Specify Base Share Path for non-interactive use
       if [ -d "$OPTARG" ]; then
           BASE_SHARE="${OPTARG%/}" # Remove trailing slash
           share_set_by_arg=true
       else
           printf "%b\n" "${RED}Error: Path provided with -L ('$OPTARG') is not a valid directory. Exiting.${RESET}" >&2
+          exit 1
+      fi
+      ;;
+    s) # Specify Safety Buffer in GB (NEW v2.1.0)
+      # Input validation for numerical safety buffer: check for positive integer
+      if [[ "$OPTARG" =~ ^[0-9]+$ ]] && (( OPTARG > 0 )); then
+          SAFETY_BUFFER_GB="$OPTARG"
+          safety_set_by_arg=true
+      else
+          printf "%b\n" "${RED}Error: -s flag requires a positive integer value in Gigabytes. Exiting.${RESET}" >&2
           exit 1
       fi
       ;;
@@ -152,7 +167,7 @@ is_consolidated() {
         return 0 # Consolidated (True)
     else
         return 1 # Not consolidated (False)
-    fi
+    }
 }
 
 # Function to display fragmentation information for a selected folder
@@ -248,7 +263,7 @@ configure_manual_base_share() {
         if [ -z "$NEW_BASE_SHARE_INPUT" ]; then
             printf "%b\n" "Using current base share: ${BLUE}$BASE_SHARE${RESET}"
             break
-        fi # FIX: Closing 'if' block
+        fi 
         
         # Check if the input path exists and is a directory
         if [ -d "$NEW_BASE_SHARE_INPUT" ]; then
@@ -263,7 +278,7 @@ configure_manual_base_share() {
 }
 
 
-# --- Share Selection Logic (New) ---
+# --- Share Selection Logic ---
 select_base_share() {
     printf "%b\n" "${CYAN}------------------------------------------------${RESET}"
     printf "%b\n" "${CYAN}       Select Base Share for Consolidation       ${RESET}"
@@ -309,7 +324,6 @@ select_base_share() {
             break
         else
             printf "%b\n" "${RED}Invalid selection. Please enter a number between 1 and ${#shares[@]}, or 'L'.${RESET}" >&2
-        # FIX: Removed stray '*/' which caused the EOF error
         fi
     done
     echo ""
@@ -527,10 +541,10 @@ interactive_consolidation() {
 
 # Function to prompt the user for the minimum free space safety margin in GB
 prompt_for_min_free_space() {
-    local default_gb=$((MIN_FREE_SPACE_KB / 1024 / 1024)) # Default in GB (200)
+    # Use the current SAFETY_BUFFER_GB for the default/initial value
+    local default_gb="$SAFETY_BUFFER_GB" 
     
     printf "%b\n" "${CYAN}--- Safety Margin Configuration ---${RESET}"
-    # FIX: Replaced echo with printf "%b\n" to correctly interpret ANSI color codes
     printf "%b\n" "The current default minimum free space safety margin is ${BLUE}${default_gb} GB${RESET}."
     printf "%b\n" "This script will ensure the destination disk has at least this much free space AFTER the move."
     
@@ -540,18 +554,15 @@ prompt_for_min_free_space() {
         read -r -p "$prompt_str" USER_INPUT_GB
         
         if [ -z "$USER_INPUT_GB" ]; then
-            ACTIVE_MIN_FREE_KB="$MIN_FREE_SPACE_KB"
-            printf "%b\n" "Using default safety margin: ${BLUE}$(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB)${RESET}"
+            # If Enter is pressed, use the current SAFETY_BUFFER_GB (which is default or -s value)
+            printf "%b\n" "Using current safety margin: ${BLUE}${SAFETY_BUFFER_GB} GB${RESET}"
             return 0
         fi
 
         # Input validation: must be a positive integer
-        # Note: Uses POSIX ERE syntax for regex matching in bash [[ ... =~ ... ]]
         if [[ "$USER_INPUT_GB" =~ ^[1-9][0-9]*$ ]]; then
-            # Convert GB to 1K blocks (KB)
-            # KB = GB * 1024 * 1024
-            ACTIVE_MIN_FREE_KB=$((USER_INPUT_GB * 1024 * 1024))
-            printf "%b\n" "Safety margin set to: ${BLUE}$(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB)${RESET}"
+            SAFETY_BUFFER_GB="$USER_INPUT_GB"
+            printf "%b\n" "Safety margin set to: ${BLUE}${SAFETY_BUFFER_GB} GB${RESET}"
             return 0
         else
             printf "%b\n" "${RED}Invalid input. Please enter a positive whole number for GB or press Enter.${RESET}" >&2
@@ -567,24 +578,32 @@ auto_plan_and_execute() {
     printf "%b\n" "${CYAN}     Starting FULL AUTOMATED CONSOLIDATION PLANNER        ${RESET}"
     printf "%b\n" "${CYAN}--------------------------------------------------------${RESET}"
     
-    # *** NEW: Check for fully non-interactive mode (for cron) ***
+    # *** Check for fully non-interactive mode (for cron) ***
     local fully_automated_cron=false
+    # If -a AND -L were set, AND -s was also set OR we're using default, assume cron mode.
     if [ "$auto_mode" = true ] && [ "$share_set_by_arg" = true ]; then
         fully_automated_cron=true
     fi
     
     # 1. Safety Margin Configuration
-    if [ "$fully_automated_cron" = false ]; then
-        # Prompt user if NOT running as a non-interactive cron job
+    if [ "$fully_automated_cron" = false ] && [ "$safety_set_by_arg" = false ]; then
+        # Prompt user if NOT running as a non-interactive cron job AND -s was NOT provided
         prompt_for_min_free_space
     else
-        # Use default value for cron
-        ACTIVE_MIN_FREE_KB="$MIN_FREE_SPACE_KB"
-        printf "%b\n" "${YELLOW}Non-Interactive Mode: Using default safety margin: ${BLUE}$(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB)${RESET}"
+        # If running as cron or -s was provided, no prompt is needed.
+        if [ "$safety_set_by_arg" = true ]; then
+            printf "%b\n" "${YELLOW}Non-Interactive Mode: Using safety margin set by -s: ${BLUE}${SAFETY_BUFFER_GB} GB${RESET}"
+        else
+            printf "%b\n" "${YELLOW}Non-Interactive Mode: Using default safety margin: ${BLUE}${SAFETY_BUFFER_GB} GB${RESET}"
+        fi
     fi
-
+    
+    # Calculate the final KB value for the safety check
+    # KB = GB * 1024 * 1024
+    ACTIVE_MIN_FREE_KB=$((SAFETY_BUFFER_GB * 1024 * 1024))
 
     printf "%b\n" "Base Share: ${BLUE}$BASE_SHARE${RESET}"
+    # Display KB for accurate internal check logging
     printf "%b\n" "Safety Margin: ${BLUE}$(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB)${RESET} minimum free space"
     
     if [ "$dry_run" = true ]; then
@@ -731,7 +750,7 @@ auto_plan_and_execute() {
         # Sanity check for size: if no fragments found with size, skip.
         if [ "$TOTAL_FOLDER_SIZE" -eq 0 ]; then
               if [ "$scan_verbosity_mode" -ne 3 ]; then
-                  printf "%b\n" "${YELLOW}  [SKIP]: '${share_component}' - No file fragments found. Skipping.${RESET}"
+                  printf "%b\n" "${RED}  [SKIP]: '${share_component}' - No file fragments found. Skipping.${RESET}"
               else
                   # FIX (v1.2.2): Use single %b for full colored output
                   printf "\r%b" "${CYAN}Processing folders: ${BLUE}$FOLDER_COUNTER${RESET}"
@@ -778,7 +797,7 @@ auto_plan_and_execute() {
                 CURRENT_FILE_COUNT=$(find "$CURRENT_FOLDER_PATH" -type f 2>/dev/null | wc -l)
             else
                 CURRENT_FILE_COUNT=0
-            fi
+            end
             
             # Store disk metrics for later sorting: FileCount,FreeSpace,DiskName
             printf "%s,%s,%s\n" "$CURRENT_FILE_COUNT" "$CURRENT_FREE_SPACE" "$disk_name" >> "$TEMP_CANDIDATES"
@@ -815,7 +834,6 @@ auto_plan_and_execute() {
             fi
 
         else
-            # Use ACTIVE_MIN_FREE_KB here
             if [ "$scan_verbosity_mode" -ne 3 ]; then # Show this detailed skip message unless in Progress Only mode
                 printf "%b\n" "${RED}  [SKIP]: '${share_component}' (Size: $(numfmt --to=iec --from-unit=1K $TOTAL_FOLDER_SIZE)) - No disk meets the $(numfmt --to=iec --from-unit=1K $ACTIVE_MIN_FREE_KB) safety margin requirement.${RESET}"
             else
