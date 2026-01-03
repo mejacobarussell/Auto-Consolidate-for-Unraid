@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
-# consld8-auto - Fully Automated or Interactive Consolidation for unRAID (v2.1.0)
-VERSION="2.1.0"
+# consld8-auto - Fully Automated or Interactive Consolidation for unRAID (v2.1.1)
+VERSION="2.1.1"
 
 # --- Version Notes ---
+# v2.1.1: FIX - Corrected a syntax error (line 170) in the 'is_consolidated' 
+#         function where the 'if' statement was not closed with 'fi', causing
+#         the script to fail on execution.
+#
 # v2.1.0: ENHANCEMENT - Added flag -s <GB> to non-interactively set the minimum
 #         free space Safety Buffer in Gigabytes, overriding the default. Input 
 #         validation ensures a positive integer is provided.
@@ -167,8 +171,8 @@ is_consolidated() {
         return 0 # Consolidated (True)
     else
         return 1 # Not consolidated (False)
-    }
-}
+    fi  # <-- CORRECTED: Must close 'if' with 'fi'
+} # <-- CORRECTED: Must close function with '}'
 
 # Function to display fragmentation information for a selected folder
 display_folder_fragmentation_info() {
@@ -797,7 +801,7 @@ auto_plan_and_execute() {
                 CURRENT_FILE_COUNT=$(find "$CURRENT_FOLDER_PATH" -type f 2>/dev/null | wc -l)
             else
                 CURRENT_FILE_COUNT=0
-            end
+            fi
             
             # Store disk metrics for later sorting: FileCount,FreeSpace,DiskName
             printf "%s,%s,%s\n" "$CURRENT_FILE_COUNT" "$CURRENT_FREE_SPACE" "$disk_name" >> "$TEMP_CANDIDATES"
