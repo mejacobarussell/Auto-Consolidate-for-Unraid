@@ -62,7 +62,7 @@ This script is written in **Bash** and requires standard Linux tools available o
 2.  **Download the script:**
 
       ```bash
-    wget [https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consld8-2.0.0.sh](https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consld8-2.0.0.sh)
+    wget [https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consld8-auto-v3.sh](https://raw.githubusercontent.com/mejacobarussell/Auto-Consolidate-for-Unraid/refs/heads/main/consld8-auto-v3.sh)
     # Note: Ensure you download the latest version, or rename the file after download.
     ```
 
