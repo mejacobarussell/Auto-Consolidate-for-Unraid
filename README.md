@@ -15,6 +15,8 @@ If this script helps you keep your unRAID array tidy, please consider supporting
 
 ![image](https://github.com/mejacobarussell/Auto-Consolidate-for-Unraid/blob/main/example.png)
 
+ # 💾 consld8-auto: UnRAID Share Consolidation Script (v3.0.0)
+Fixed errors caused by folders with spaces "The Doors" etc
 
  # 💾 consld8-auto: UnRAID Share Consolidation Script (v2.0.0)
 
