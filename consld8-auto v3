@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
+#VERSION="3.0.0"  Fix the space in folder names bug.
 # consld8-auto - Fully Automated or Interactive Consolidation for unRAID (v2.2.0)
-VERSION="2.2.0"
+#VERSION="2.2.0"
 # --- Version Notes ---
 # v2.2.0: FIX - Comprehensive fix for folder names containing spaces.
 #         - Replaced all brace-expanded disk loops (/mnt/{disk*,cache}) with a
@@ -87,7 +88,7 @@ options:
   -v      Print more information (recommended for auto mode).
   -a      *** Run in FULL AUTOMATIC PLANNING MODE ***
   -I      *** Run in INTERACTIVE MODE (Explicitly selected) ***
-  -L <path> Set the base share path (e.g., /mnt/user/TVSHOWS) non-interactively.
+  -L <path> Set the base share path (e.g., /mnt/user/TVSHOWS) non-interactively. Example "consold8-autov3.sh -L /mnt/user//TVSHOWS -a -s 300 -v -f"
             REQUIRED for non-interactive cron execution with -a.
   -s <GB>   Sets the required minimum Safety Buffer in Gigabytes (GB). Overrides default (${DEFAULT_SAFETY_BUFFER_GB} GB).
 EOF
